@@ -49,13 +49,14 @@
     "check": "npm run format && npm run lint && npm test && npm run build"
   },
   "devDependencies": {
-    "auto-changelog": "2.4.0",
     "@semantic-release/git": "10.0.1",
     "@semantic-release/npm": "9.0.1",
+    "@semantic-release/release-notes-generator": "10.0.3",
     "@types/express": "4.17.13",
     "@types/jest": "27.5.0",
     "@typescript-eslint/eslint-plugin": "5.17.0",
     "@typescript-eslint/parser": "5.17.0",
+    "auto-changelog": "2.4.0",
     "axios": "0.27.2",
     "eslint": "8.14.0",
     "eslint-config-prettier": "8.5.0",
