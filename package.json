@@ -43,9 +43,7 @@
     "clean": "rimraf ./dist",
     "build": "npm run clean && tsc --project tsconfig.build.json",
     "prepare": "husky install",
-    "changelog": "auto-changelog -p && git add CHANGELOG.md",
     "semantic-release": "semantic-release",
-    "version": "npm run build && git add -A dist && npm run changelog",
     "check": "npm run format && npm run lint && npm test && npm run build"
   },
   "devDependencies": {
@@ -56,7 +54,6 @@
     "@types/jest": "27.5.0",
     "@typescript-eslint/eslint-plugin": "5.17.0",
     "@typescript-eslint/parser": "5.17.0",
-    "auto-changelog": "2.4.0",
     "axios": "0.27.2",
     "eslint": "8.14.0",
     "eslint-config-prettier": "8.5.0",
