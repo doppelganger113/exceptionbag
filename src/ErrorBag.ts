@@ -1,43 +1,100 @@
-import { Bag, BagValue } from './Bag';
+import { Constructable } from './types';
 
-type Constructable = new (...args: unknown[]) => unknown;
+export type BagValue = string | number | boolean | undefined;
+
+export interface MetaBag {
+  [key: string]: BagValue;
+}
 
 /**
- * @description Extends {@link Error} class with the addition of meta data which can later be
- * extracted for easier debugging and logging. Message created by the {@link ErrorBag} also extends
- * base error and any further chained wrapping in order to create more readable error message.
- * Basic and advanced creation is usually done with helper static methods and main purpose is to
- * wrap an existing error
+ * @description Extension of {@link Error} class used for adding additional meta data which can then later be extracted
+ * for easier debugging or logging purposes. {@link ErrorBag} also extends the error message in a chain fashion
+ * making it much easier to understand what caused the error in the chain.
+ *
+ * Important thing to note is that, values in the bag can be overwritten in case the custom class has a property named
+ * <strong>description</strong> and you add metadata with key <strong>description</strong> the metadata will
+ * <strong>overwrite</strong> the property.
  *
  * @example
  *
- * let userId = 1234;
- * let correlationId = 'some-uuid-1234';
- * try {
- *   return await usersRepository.fetchUserById(userId);
- * } catch(error) {
- *  throw ErrorBag.from('failed fetching user', error)
- *    .with('userId', userId)
- *    .with('correlationId', correlationId);
- * }
+ *  // Basic creation, similar to new Error('failed saving to the database')
+ *  throw ErrorBag.from('failed saving to the database')
+ *    .with('userId', userId);
  *
- * // Down the line in you error handler
- * try {
- *   // here we throw ErrorBag
- * } catch(error) {
- *   const bag = error instanceof ErrorBag ? error.getBag || {};
- *
- *   logger.error({
- *     message: error.message,
- *     name: error.name:
- *     stack: error.stack,
- *     ...error.getBag()
- *   })
- * }
+ *  // Wrapping errors
+ *  let userId = '123';
+ *  try {
+ *    // do something that can fail
+ *    usersRepository.fetchUser(userId)
+ *  } catch(err) {
+ *    throw ErrorBag.from('Failed saving user', err)
+ *      .with('userId', userId)
+ *  }
  */
 export class ErrorBag extends Error {
-  protected readonly cause?: Error;
-  private bag: Bag = {};
+  /**
+   * @description Used to wrap basic {@link Error} classes or custom ones into {@link ErrorBag}. If the error is of
+   * type {@link ErrorBag} then it is returned with only the message extended with description. Note that in both
+   * cases the stack trace will be kept.
+   *
+   * If you have a custom error class that extends {@link Error} then properties of that new class will be added to the
+   * bag.
+   *
+   * @example
+   *  try {
+   *    // code that might fail
+   *  } catch (error) {
+   *    throw ErrorBag.from('failed fetching user from database', error)
+   *      .with('userId', userId);
+   *  }
+   */
+  public static from(description: string, err?: Error | ErrorBag | string | number | boolean): ErrorBag {
+    if (!err) {
+      const exception = new ErrorBag(description);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      Error.captureStackTrace(exception, ErrorBag.from);
+      return exception;
+    }
+
+    if (err instanceof ErrorBag) {
+      err.setMessage(`${description}: ${err.message}`);
+      return err;
+    }
+
+    return ErrorBag.fromError(description, err);
+  }
+
+  private static fromError(description: string, err: Error | string | number | boolean): ErrorBag {
+    if (typeof err === 'string' || typeof err === 'number' || typeof err === 'boolean') {
+      const exception = new ErrorBag(`${description}: ${String(err)} (${typeof err})`);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      Error.captureStackTrace(exception, ErrorBag.from);
+      return exception;
+    }
+
+    const exception = new ErrorBag(`${description}: ${err.name} ${err.message}`, err);
+    exception.stack = err.stack;
+
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    const customErr = err as Record<string, any>;
+    Object.keys(customErr).forEach((key) => {
+      const value: unknown = customErr[key];
+      if (value === undefined) {
+        return;
+      }
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        exception.with(key, value);
+      } else {
+        exception.with(key, JSON.stringify(value));
+      }
+    });
+
+    return exception;
+  }
+
+  public readonly cause?: Error;
+
+  private meta: MetaBag = {};
 
   public constructor(msg: string, cause?: Error) {
     super(msg);
@@ -46,38 +103,77 @@ export class ErrorBag extends Error {
   }
 
   /**
-   * @description Add value by key to the bag.
+   * @description Set metadata by key/value pair or by passing an object which is spread 1 level deep converting deeper
+   * levels to string.
    */
-  public with(key: string, value: BagValue): ErrorBag {
-    this.bag[key] = value;
+  public with(map: Record<string, unknown> | object): ErrorBag;
+  public with(key: string, value: BagValue): ErrorBag;
+  public with(firstArg: string | (Record<string, unknown> | object), secondArg?: BagValue): ErrorBag {
+    if (typeof firstArg === 'string') {
+      return this.withPair(firstArg, secondArg);
+    }
+
+    return this.withSpread(firstArg);
+  }
+
+  protected withPair(key: string, value: BagValue): ErrorBag {
+    this.meta[key] = value;
     return this;
   }
 
+  /**
+   * @description Spreads object properties of 1 level and stringifies 2nd level in the metadata store. Note that this
+   * also overrides metadata with the same name/key.
+   *
+   * @deprecated {@link ErrorBag.with} now supports this functionality as well as key/value pair.
+   */
+  public withSpread(map: Record<string, unknown> | object): ErrorBag {
+    if (!map) {
+      return this;
+    }
+
+    const iterable = map as Record<string, unknown>;
+
+    Object.keys(iterable).forEach((key) => {
+      const value = iterable[key];
+      if (value === undefined || value === null) {
+        return;
+      }
+
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        this.with(key, value);
+        return;
+      }
+
+      this.with(key, JSON.stringify(value));
+    });
+
+    return this;
+  }
+
+  /**
+   * @description Get metadata value by key.
+   */
   public get(key: string): BagValue {
-    return this.bag[key];
+    return this.meta[key];
   }
 
+  /**
+   * @description Does metadata have the specified key.
+   */
   public has(key: string): boolean {
-    return this.bag[key] !== undefined;
+    return this.meta[key] !== undefined;
   }
 
   /**
-   * @description Get underlying error that was wrapped if there was any.
+   * @description Key/value store of metadata related to the error.
    */
-  public getCause(): Error | undefined {
-    return this.cause;
+  public getBag(): MetaBag {
+    return this.meta;
   }
 
   /**
-   * @description Returns key-value bag with metadata.
-   */
-  public getBag(): Bag {
-    return this.bag;
-  }
-
-  /**
-   * @description Check if underlying error that was wrapped is instance of
-   * specific class.
+   * @description Check if ErrorBag wraps specified error class.
    */
   public isCauseInstanceOf<C extends Constructable>(clazz: C): boolean {
     if (!this.cause) {
@@ -89,64 +185,5 @@ export class ErrorBag extends Error {
 
   protected setMessage(msg: string): void {
     this.message = msg;
-  }
-
-  /**
-   * @description Wraps {@link Error} or custom errors into {@link ErrorBag}, in case the error
-   * is of type {@link ErrorBag} then it will be returned with extended message. In both cases
-   * the stack trace will be kept.
-   *
-   * If you have a custom error class that extends {@link Error} then the properties of that class
-   * will be added to the bag.
-   *
-   * @example
-   * try {
-   *   // code that could throw
-   * } catch(error) {
-   *   throw ErrorBag.from('failed fetching user from database', error)
-   *     .with('userId', userId);
-   * }
-   */
-  public static from(description: string, err?: Error | ErrorBag | string | null | boolean): ErrorBag {
-    if (!err) {
-      const errBag = new ErrorBag(description);
-      Error.captureStackTrace(errBag, ErrorBag.from);
-
-      return errBag;
-    }
-
-    if (err instanceof ErrorBag) {
-      err.setMessage(`${description}: ${err.message}`);
-      return err;
-    }
-
-    return ErrorBag.fromError(description, err);
-  }
-
-  private static fromError(description: string, err: string | boolean | Error): ErrorBag {
-    if (typeof err === 'string' || typeof err === 'number' || typeof err === 'boolean') {
-      const errBag = new ErrorBag(`${description}: ${String(err)} (${typeof err})`);
-      Error.captureStackTrace(errBag, ErrorBag.from);
-
-      return errBag;
-    }
-
-    const errBag = new ErrorBag(`${description}: ${err.name} ${err.message}`, err);
-    errBag.stack = err.stack;
-
-    const customErr = err as Record<string, any>;
-    Object.keys(customErr).forEach((key) => {
-      const value: unknown = customErr[key];
-      if (value === undefined) {
-        return;
-      }
-      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        errBag.with(key, value);
-      } else {
-        errBag.with(key, JSON.stringify(value));
-      }
-    });
-
-    return errBag;
   }
 }

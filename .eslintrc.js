@@ -12,7 +12,8 @@ module.exports = {
     },
     plugins: [
         '@typescript-eslint',
-        'jest'
+        'jest',
+        'unused-imports'
     ],
     extends: [
         'eslint:recommended',
@@ -21,12 +22,18 @@ module.exports = {
         'plugin:jest/recommended',
         'plugin:@typescript-eslint/recommended-requiring-type-checking'
     ],
-    "rules": {
+    rules: {
         "@typescript-eslint/unbound-method": [
             "error",
             {
                 "ignoreStatic": true
             }
+        ],
+        "no-unused-vars": "off", // or "@typescript-eslint/no-unused-vars": "off",
+        "unused-imports/no-unused-imports": "error",
+        "unused-imports/no-unused-vars": [
+            "warn",
+            { "vars": "all", "varsIgnorePattern": "^_", "args": "after-used", "argsIgnorePattern": "^_" }
         ]
     }
 }

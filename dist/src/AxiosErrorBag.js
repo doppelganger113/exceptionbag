@@ -13,6 +13,8 @@ const FIELD = {
     Status: 'axios_status',
     Code: 'axios_code',
     Source: 'axios_source',
+    BaseUrl: 'axios_baseUrl',
+    Timeout: 'axios_timeout',
     Path: 'axios_path',
     Method: 'axios_method',
     StatusText: 'axios_statusText',
@@ -20,25 +22,25 @@ const FIELD = {
 };
 /**
  * @description Extension of {@link ErrorBag} used for wrapping AxiosError and providing specific error data info.
+ * To prevent accidentally overwriting **axios metadata** in bag creation will create metadata fields that start with
+ * prefix: "axios_".
  *
  * @example
  * try {
  *   // execute axios request
  * } catch(error) {
- *   if(AxiosException.isAxiosError(error)) {
- *     throw AxiosException.fromAxiosError('failed fetching user', error).with('userId', userId);
- *   }
- *
- *   throw ErrorBag.from('failed fetching user', error).with('userId', userId);
+ *   throw AxiosErrorBag.from('failed fetching user', error).with('userId', userId);
  * }
  */
 class AxiosErrorBag extends ErrorBag_1.ErrorBag {
-    constructor(msg, status, statusText, source, code, path, method, headers, responseData) {
+    constructor(msg, status, statusText, source, baseUrl, timeout, code, path, method, headers, responseData) {
         super(msg);
-        this.name = 'AxiosErrorBag';
+        this.name = AxiosErrorBag.name;
         this.status = status;
         this.statusText = statusText;
         this.source = source;
+        this.baseUrl = baseUrl;
+        this.timeout = timeout;
         this.code = code;
         this.path = path;
         this.method = method;
@@ -46,7 +48,11 @@ class AxiosErrorBag extends ErrorBag_1.ErrorBag {
         this.responseData = responseData;
     }
     static isAxiosError(error) {
-        return error.isAxiosError;
+        if (error === undefined || error === null) {
+            return false;
+        }
+        const { isAxiosError } = error;
+        return Boolean(isAxiosError) || isAxiosError === 'true';
     }
     hasStatus(status) {
         return this.status === status;
@@ -79,9 +85,14 @@ class AxiosErrorBag extends ErrorBag_1.ErrorBag {
     /**
      * @description Create only if {@link AxiosErrorBag.isAxiosError} check was performed as you will be sure it
      * was an axios error type.
+     *
+     * @deprecated Prefer {@link AxiosErrorBag.from} as it converts to {@link AxiosErrorBag} if axios, otherwise
+     * to {@link ErrorBag}
      */
     static fromAxiosError(description, error) {
         var _a;
+        const baseUrl = error.config.baseURL || '';
+        const timeout = error.config.timeout || 0;
         const code = error.code || '';
         const status = ((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) || 0;
         let statusText = '';
@@ -112,7 +123,7 @@ class AxiosErrorBag extends ErrorBag_1.ErrorBag {
             method = error.config.method || '';
         }
         method = method.toUpperCase();
-        const exception = new AxiosErrorBag(fullMessage, status, statusText, source, code, path, method, headers, responseData)
+        const exception = new AxiosErrorBag(fullMessage, status, statusText, source, baseUrl, timeout, code, path, method, headers, responseData)
             .with(FIELD.Status, status)
             .with(FIELD.StatusText, statusText)
             .with(FIELD.Code, code)
@@ -120,10 +131,21 @@ class AxiosErrorBag extends ErrorBag_1.ErrorBag {
             .with(FIELD.Method, method)
             .with(FIELD.Headers, JSON.stringify(headers))
             .with(FIELD.Source, source)
+            .with(FIELD.BaseUrl, baseUrl)
+            .with(FIELD.Timeout, timeout)
             .with(FIELD.Data, JSON.stringify(responseData));
         // eslint-disable-next-line @typescript-eslint/unbound-method
         Error.captureStackTrace(exception, AxiosErrorBag.fromAxiosError);
         return exception;
+    }
+    /**
+     * @description Creates {@link AxiosErrorBag} if it's an axios error, otherwise a plain {@link ErrorBag}
+     */
+    static from(description, err) {
+        if (AxiosErrorBag.isAxiosError(err)) {
+            return AxiosErrorBag.fromAxiosError(description, err);
+        }
+        return ErrorBag_1.ErrorBag.from(description, err);
     }
 }
 exports.AxiosErrorBag = AxiosErrorBag;

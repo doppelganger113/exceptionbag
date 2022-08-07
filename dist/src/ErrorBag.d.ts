@@ -1,79 +1,84 @@
-import { Bag, BagValue } from './Bag';
-declare type Constructable = new (...args: unknown[]) => unknown;
+import { Constructable } from './types';
+export declare type BagValue = string | number | boolean | undefined;
+export interface MetaBag {
+    [key: string]: BagValue;
+}
 /**
- * @description Extends {@link Error} class with the addition of meta data which can later be
- * extracted for easier debugging and logging. Message created by the {@link ErrorBag} also extends
- * base error and any further chained wrapping in order to create more readable error message.
- * Basic and advanced creation is usually done with helper static methods and main purpose is to
- * wrap an existing error
+ * @description Extension of {@link Error} class used for adding additional meta data which can then later be extracted
+ * for easier debugging or logging purposes. {@link ErrorBag} also extends the error message in a chain fashion
+ * making it much easier to understand what caused the error in the chain.
+ *
+ * Important thing to note is that, values in the bag can be overwritten in case the custom class has a property named
+ * <strong>description</strong> and you add metadata with key <strong>description</strong> the metadata will
+ * <strong>overwrite</strong> the property.
  *
  * @example
  *
- * let userId = 1234;
- * let correlationId = 'some-uuid-1234';
- * try {
- *   return await usersRepository.fetchUserById(userId);
- * } catch(error) {
- *  throw ErrorBag.from('failed fetching user', error)
- *    .with('userId', userId)
- *    .with('correlationId', correlationId);
- * }
+ *  // Basic creation, similar to new Error('failed saving to the database')
+ *  throw ErrorBag.from('failed saving to the database')
+ *    .with('userId', userId);
  *
- * // Down the line in you error handler
- * try {
- *   // here we throw ErrorBag
- * } catch(error) {
- *   const bag = error instanceof ErrorBag ? error.getBag || {};
- *
- *   logger.error({
- *     message: error.message,
- *     name: error.name:
- *     stack: error.stack,
- *     ...error.getBag()
- *   })
- * }
+ *  // Wrapping errors
+ *  let userId = '123';
+ *  try {
+ *    // do something that can fail
+ *    usersRepository.fetchUser(userId)
+ *  } catch(err) {
+ *    throw ErrorBag.from('Failed saving user', err)
+ *      .with('userId', userId)
+ *  }
  */
 export declare class ErrorBag extends Error {
-    protected readonly cause?: Error;
-    private bag;
+    /**
+     * @description Used to wrap basic {@link Error} classes or custom ones into {@link ErrorBag}. If the error is of
+     * type {@link ErrorBag} then it is returned with only the message extended with description. Note that in both
+     * cases the stack trace will be kept.
+     *
+     * If you have a custom error class that extends {@link Error} then properties of that new class will be added to the
+     * bag.
+     *
+     * @example
+     *  try {
+     *    // code that might fail
+     *  } catch (error) {
+     *    throw ErrorBag.from('failed fetching user from database', error)
+     *      .with('userId', userId);
+     *  }
+     */
+    static from(description: string, err?: Error | ErrorBag | string | number | boolean): ErrorBag;
+    private static fromError;
+    readonly cause?: Error;
+    private meta;
     constructor(msg: string, cause?: Error);
     /**
-     * @description Add value by key to the bag.
+     * @description Set metadata by key/value pair or by passing an object which is spread 1 level deep converting deeper
+     * levels to string.
      */
+    with(map: Record<string, unknown> | object): ErrorBag;
     with(key: string, value: BagValue): ErrorBag;
+    protected withPair(key: string, value: BagValue): ErrorBag;
+    /**
+     * @description Spreads object properties of 1 level and stringifies 2nd level in the metadata store. Note that this
+     * also overrides metadata with the same name/key.
+     *
+     * @deprecated {@link ErrorBag.with} now supports this functionality as well as key/value pair.
+     */
+    withSpread(map: Record<string, unknown> | object): ErrorBag;
+    /**
+     * @description Get metadata value by key.
+     */
     get(key: string): BagValue;
+    /**
+     * @description Does metadata have the specified key.
+     */
     has(key: string): boolean;
     /**
-     * @description Get underlying error that was wrapped if there was any.
+     * @description Key/value store of metadata related to the error.
      */
-    getCause(): Error | undefined;
+    getBag(): MetaBag;
     /**
-     * @description Returns key-value bag with metadata.
-     */
-    getBag(): Bag;
-    /**
-     * @description Check if underlying error that was wrapped is instance of
-     * specific class.
+     * @description Check if ErrorBag wraps specified error class.
      */
     isCauseInstanceOf<C extends Constructable>(clazz: C): boolean;
     protected setMessage(msg: string): void;
-    /**
-     * @description Wraps {@link Error} or custom errors into {@link ErrorBag}, in case the error
-     * is of type {@link ErrorBag} then it will be returned with extended message. In both cases
-     * the stack trace will be kept.
-     *
-     * If you have a custom error class that extends {@link Error} then the properties of that class
-     * will be added to the bag.
-     *
-     * @example
-     * try {
-     *   // code that could throw
-     * } catch(error) {
-     *   throw ErrorBag.from('failed fetching user from database', error)
-     *     .with('userId', userId);
-     * }
-     */
-    static from(description: string, err?: Error | ErrorBag | string | null | boolean): ErrorBag;
-    private static fromError;
 }
-export {};
