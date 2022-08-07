@@ -1,10 +1,10 @@
-import { ThrowsErrorBag } from './ThrowsErrorBag';
+import { ThrowsExceptionBag } from './ThrowsExceptionBag';
 import { InBag } from './decorators';
-import { ErrorBag } from './ErrorBag';
+import { ExceptionBag } from './ExceptionBag';
 import { from, lastValueFrom, Observable, throwError } from 'rxjs';
 
 /* eslint-disable jest/no-conditional-expect */
-describe('ThrowsErrorBag', () => {
+describe('ThrowsExceptionBag', () => {
   class RandomException extends Error {
     public constructor(msg?: string) {
       super(msg);
@@ -34,19 +34,19 @@ describe('ThrowsErrorBag', () => {
   }
 
   class MyClass {
-    @ThrowsErrorBag()
+    @ThrowsExceptionBag()
     async getUser(password: string, @InBag('username') username: string) {
       return new Promise((resolve, reject) => {
         setTimeout(() => reject(new Error('we have failed fetching user')), 100);
       });
     }
 
-    @ThrowsErrorBag('failed handling user')
+    @ThrowsExceptionBag('failed handling user')
     async handleUser(@InBag('id') id: string, @InBag('value') value?: any) {
       return this.getUser('1234', 'admin');
     }
 
-    @ThrowsErrorBag({ ignore: CustomHttpException, message: 'bad user handling' })
+    @ThrowsExceptionBag({ ignore: CustomHttpException, message: 'bad user handling' })
     async handleUserWithIgnore(@InBag('id') id: string, @InBag('value') value?: any) {
       if (id === '1') {
         throw new CustomHttpException('custom failure');
@@ -54,7 +54,7 @@ describe('ThrowsErrorBag', () => {
       return this.getUser('1234', 'admin');
     }
 
-    @ThrowsErrorBag({ ignore: CustomHttpException, message: 'bad user handling' })
+    @ThrowsExceptionBag({ ignore: CustomHttpException, message: 'bad user handling' })
     handleUserWithIgnoreObservable(@InBag('id') id: string): Observable<string> {
       if (id === '1') {
         return throwError(() => new CustomHttpException('custom failure'));
@@ -67,7 +67,7 @@ describe('ThrowsErrorBag', () => {
       return from('John');
     }
 
-    @ThrowsErrorBag({
+    @ThrowsExceptionBag({
       ignore: [CustomParentException, RandomException],
       message: 'bad user handling',
     })
@@ -92,8 +92,8 @@ describe('ThrowsErrorBag', () => {
     try {
       await new MyClass().handleUser('1111');
     } catch (error: unknown) {
-      expect(error).toBeInstanceOf(ErrorBag);
-      const exception = error as ErrorBag;
+      expect(error).toBeInstanceOf(ExceptionBag);
+      const exception = error as ExceptionBag;
       expect(exception.message).toBe(
         'failed handling user: failed MyClass getUser: Error we have failed fetching user',
       );
@@ -140,16 +140,18 @@ describe('ThrowsErrorBag', () => {
       );
     });
 
-    it('should throw ErrorBag when observable and not custom error', async () => {
-      await expect(lastValueFrom(new MyClass().handleUserWithIgnoreObservable('2'))).rejects.toBeInstanceOf(ErrorBag);
+    it('should throw ExceptionBag when observable and not custom error', async () => {
+      await expect(lastValueFrom(new MyClass().handleUserWithIgnoreObservable('2'))).rejects.toBeInstanceOf(
+        ExceptionBag,
+      );
     });
 
     it('should ignore class which is not ignored', async () => {
       try {
         await new MyClass().handleUserWithMultiIgnore('3');
       } catch (error: unknown) {
-        expect(error).toBeInstanceOf(ErrorBag);
-        const exception = error as ErrorBag;
+        expect(error).toBeInstanceOf(ExceptionBag);
+        const exception = error as ExceptionBag;
         expect(exception.message).toBe('bad user handling: UnhandledException unhandled failure');
         expect(exception.getBag()).toEqual({
           class: 'MyClass',

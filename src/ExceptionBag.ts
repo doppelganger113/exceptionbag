@@ -8,7 +8,7 @@ export interface MetaBag {
 
 /**
  * @description Extension of {@link Error} class used for adding additional meta data which can then later be extracted
- * for easier debugging or logging purposes. {@link ErrorBag} also extends the error message in a chain fashion
+ * for easier debugging or logging purposes. {@link ExceptionBag} also extends the error message in a chain fashion
  * making it much easier to understand what caused the error in the chain.
  *
  * Important thing to note is that, values in the bag can be overwritten in case the custom class has a property named
@@ -18,7 +18,7 @@ export interface MetaBag {
  * @example
  *
  *  // Basic creation, similar to new Error('failed saving to the database')
- *  throw ErrorBag.from('failed saving to the database')
+ *  throw ExceptionBag.from('failed saving to the database')
  *    .with('userId', userId);
  *
  *  // Wrapping errors
@@ -27,14 +27,14 @@ export interface MetaBag {
  *    // do something that can fail
  *    usersRepository.fetchUser(userId)
  *  } catch(err) {
- *    throw ErrorBag.from('Failed saving user', err)
+ *    throw ExceptionBag.from('Failed saving user', err)
  *      .with('userId', userId)
  *  }
  */
-export class ErrorBag extends Error {
+export class ExceptionBag extends Error {
   /**
-   * @description Used to wrap basic {@link Error} classes or custom ones into {@link ErrorBag}. If the error is of
-   * type {@link ErrorBag} then it is returned with only the message extended with description. Note that in both
+   * @description Used to wrap basic {@link Error} classes or custom ones into {@link ExceptionBag}. If the error is of
+   * type {@link ExceptionBag} then it is returned with only the message extended with description. Note that in both
    * cases the stack trace will be kept.
    *
    * If you have a custom error class that extends {@link Error} then properties of that new class will be added to the
@@ -44,35 +44,35 @@ export class ErrorBag extends Error {
    *  try {
    *    // code that might fail
    *  } catch (error) {
-   *    throw ErrorBag.from('failed fetching user from database', error)
+   *    throw ExceptionBag.from('failed fetching user from database', error)
    *      .with('userId', userId);
    *  }
    */
-  public static from(description: string, err?: Error | ErrorBag | string | number | boolean): ErrorBag {
+  public static from(description: string, err?: Error | ExceptionBag | string | number | boolean): ExceptionBag {
     if (!err) {
-      const exception = new ErrorBag(description);
+      const exception = new ExceptionBag(description);
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      Error.captureStackTrace(exception, ErrorBag.from);
+      Error.captureStackTrace(exception, ExceptionBag.from);
       return exception;
     }
 
-    if (err instanceof ErrorBag) {
+    if (err instanceof ExceptionBag) {
       err.setMessage(`${description}: ${err.message}`);
       return err;
     }
 
-    return ErrorBag.fromError(description, err);
+    return ExceptionBag.fromError(description, err);
   }
 
-  private static fromError(description: string, err: Error | string | number | boolean): ErrorBag {
+  private static fromError(description: string, err: Error | string | number | boolean): ExceptionBag {
     if (typeof err === 'string' || typeof err === 'number' || typeof err === 'boolean') {
-      const exception = new ErrorBag(`${description}: ${String(err)} (${typeof err})`);
+      const exception = new ExceptionBag(`${description}: ${String(err)} (${typeof err})`);
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      Error.captureStackTrace(exception, ErrorBag.from);
+      Error.captureStackTrace(exception, ExceptionBag.from);
       return exception;
     }
 
-    const exception = new ErrorBag(`${description}: ${err.name} ${err.message}`, err);
+    const exception = new ExceptionBag(`${description}: ${err.name} ${err.message}`, err);
     exception.stack = err.stack;
 
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -98,7 +98,7 @@ export class ErrorBag extends Error {
 
   public constructor(msg: string, cause?: Error) {
     super(msg);
-    this.name = 'ErrorBag';
+    this.name = ExceptionBag.name;
     this.cause = cause;
   }
 
@@ -106,9 +106,9 @@ export class ErrorBag extends Error {
    * @description Set metadata by key/value pair or by passing an object which is spread 1 level deep converting deeper
    * levels to string.
    */
-  public with(map: Record<string, unknown> | object): ErrorBag;
-  public with(key: string, value: BagValue): ErrorBag;
-  public with(firstArg: string | (Record<string, unknown> | object), secondArg?: BagValue): ErrorBag {
+  public with(map: Record<string, unknown> | object): ExceptionBag;
+  public with(key: string, value: BagValue): ExceptionBag;
+  public with(firstArg: string | (Record<string, unknown> | object), secondArg?: BagValue): ExceptionBag {
     if (typeof firstArg === 'string') {
       return this.withPair(firstArg, secondArg);
     }
@@ -116,7 +116,7 @@ export class ErrorBag extends Error {
     return this.withSpread(firstArg);
   }
 
-  protected withPair(key: string, value: BagValue): ErrorBag {
+  protected withPair(key: string, value: BagValue): ExceptionBag {
     this.meta[key] = value;
     return this;
   }
@@ -125,9 +125,9 @@ export class ErrorBag extends Error {
    * @description Spreads object properties of 1 level and stringifies 2nd level in the metadata store. Note that this
    * also overrides metadata with the same name/key.
    *
-   * @deprecated {@link ErrorBag.with} now supports this functionality as well as key/value pair.
+   * @deprecated {@link ExceptionBag.with} now supports this functionality as well as key/value pair.
    */
-  public withSpread(map: Record<string, unknown> | object): ErrorBag {
+  public withSpread(map: Record<string, unknown> | object): ExceptionBag {
     if (!map) {
       return this;
     }
@@ -173,7 +173,7 @@ export class ErrorBag extends Error {
   }
 
   /**
-   * @description Check if ErrorBag wraps specified error class.
+   * @description Check if ExceptionBag wraps specified error class.
    */
   public isCauseInstanceOf<C extends Constructable>(clazz: C): boolean {
     if (!this.cause) {

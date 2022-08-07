@@ -1,8 +1,8 @@
-# ErrorBag
+# ExceptionBag
 
 Node.js package for easier error composition and debugging.
 
-Provides `ErrorBag` type of Error class that allows adding metadata to errors and chaining the errors to create
+Provides `ExceptionBag` type of Error class that allows adding metadata to errors and chaining the errors to create
 more descriptive messages about the error failure flow.
 
 [[_TOC_]]
@@ -14,23 +14,23 @@ Review changelog for releases at [CHANGELOG.md](./CHANGELOG.md).
 ### Install
 
 ```bash
-npm install --save-exact errorbag
+npm install --save-exact exceptionbag
 ```
 
 ### Usage
 
 #### Basic
 
-`ErrorBag` is meant to be used as a wrapper for `Error` or `CustomError` classes while extending in case of `ErrorBag`.
+`ExceptionBag` is meant to be used as a wrapper for `Error` or `CustomError` classes while extending in case of `ExceptionBag`.
 
 ```typescript
-import {ErrorBag} from 'errorbag';
+import {ExceptionBag} from 'exceptionbag';
 
 const getUser = async (userId) => {
   try {
     // fetch user
   } catch (error) {
-    throw ErrorBag.from('failed fetching user from database', error)
+    throw ExceptionBag.from('failed fetching user from database', error)
       .with('userId', userId);
   }
 }
@@ -39,7 +39,7 @@ const doSomeBusinessLogic = async (userId, membership) => {
   try {
     // handle some business logic with user's membership
   } catch (error) {
-    throw ErrorBag.from('failed some business logic', error)
+    throw ExceptionBag.from('failed some business logic', error)
       .with('userId', userId)
       .with('membership', membership);
   }
@@ -48,7 +48,7 @@ const doSomeBusinessLogic = async (userId, membership) => {
 try {
   await doSomeBusinessLogic(1234, 'standard')
 } catch (error) {
-  if (error instanceof ErrorBag) {
+  if (error instanceof ExceptionBag) {
     console.log(error.message, error.getBag());
   } else {
     console.log(error);
@@ -65,11 +65,11 @@ try {
 For simple use cases, annotations can be used to decorate the method
 
 ```typescript
-import {ThrowsErrorBag} from "errorbag";
+import {ThrowsExceptionBag} from "exceptionbag";
 
 class MyService {
 
-  @ThrowsErrorBag('failed some business logic') // No message will add the class name and method name as reference
+  @ThrowsExceptionBag('failed some business logic') // No message will add the class name and method name as reference
   async doSomeBusinessLogic(@InBag('userId') userId, @InBag('membership') membership) { // @InBag decorator adds key and value to the error bag
     // handle some business logic with user's membership
   }
@@ -83,7 +83,7 @@ const doSomeBusinessLogic = async (userId, membership) => {
   try {
     // handle some business logic with user's membership
   } catch (error) {
-    throw ErrorBag.from('failed some business logic', error)
+    throw ExceptionBag.from('failed some business logic', error)
       .with('userId', userId)
       .with('membership', membership);
   }
@@ -93,7 +93,7 @@ const doSomeBusinessLogic = async (userId, membership) => {
 It is also possible to ignore certain errors and propagate them further
 
 ```typescript
-import {ThrowsErrorBag} from "errorbag";
+import {ThrowsExceptionBag} from "exceptionbag";
 
 class CustomError extends Error {
   public constructor(msg?: string) {
@@ -104,7 +104,7 @@ class CustomError extends Error {
 
 class MyService {
 
-  @ThrowsErrorBag({ignore: CustomError}) // Re-throw CustomError instead of wrapping
+  @ThrowsExceptionBag({ignore: CustomError}) // Re-throw CustomError instead of wrapping
   async doSomeBusinessLogic(userId, membership) {
     // handle some business logic with user's membership
   }
@@ -121,9 +121,29 @@ const doSomeBusinessLogic = async (userId, membership) => {
     if (error instanceof CustomError) {
       throw error;
     }
-    throw ErrorBag.from('failed some business logic', error)
+    throw ExceptionBag.from('failed some business logic', error)
       .with('userId', userId)
       .with('membership', membership);
+  }
+}
+```
+
+##### Custom decorators
+
+You can create a custom decorator easily with the use of a helper function:
+
+```typescript
+export function ThrowsCustomExceptionBag<T extends Constructable>(message?: string | ThrowsOptions<T>): DecoratedFunc {
+  return createExceptionBagDecorator(CustomExceptionBag.from)(message);
+}
+```
+And use it in same manor:
+```typescript
+class MyHandler {
+  
+  @ThrowsCustomExceptionBag()
+  doWork() {
+    
   }
 }
 ```
@@ -133,9 +153,9 @@ const doSomeBusinessLogic = async (userId, membership) => {
 Ensure that you create a Nest.js filter to catch these errors and properly handle them.
 
 ```typescript
-@Catch(ErrorBag)
-class ErrorBagFilter implements ExceptionFilter {
-  catch(exception: ErrorBag, host: ArgumentsHost): any {
+@Catch(ExceptionBag)
+class ExceptionBagFilter implements ExceptionFilter {
+  catch(exception: ExceptionBag, host: ArgumentsHost): any {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
     const req = ctx.getRequest<Request>();
@@ -148,7 +168,7 @@ class ErrorBagFilter implements ExceptionFilter {
       ...exception.getBag()
     });
 
-    // You can check for specific error classes that extend the ErrorBag if needed so
+    // You can check for specific error classes that extend the ExceptionBag if needed so
 
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -165,36 +185,36 @@ class ErrorBagFilter implements ExceptionFilter {
 You can always extend the class when you want different type of handling.
 
 ```typescript
-import {ErrorBag} from 'errorbag';
+import {ExceptionBag} from 'exceptionbag';
 
-class CustomErrorBag extends ErrorBag {
+class CustomExceptionBag extends ExceptionBag {
   public responseStatus: number;
 }
 ```
 
 ### Additional Error utility classes
 
-List of existing custom `ErrorBag` subclasses:
+List of existing custom `ExceptionBag` subclasses:
 
-- `AxiosErrorBag` - Detects and wraps axios error, along with some request and response information.
+- `AxiosExceptionBag` - Detects and wraps axios error, along with some request and response information.
 
 ```typescript
-import {AxiosErrorBag, ErrorBag} from 'errorbag';
+import {AxiosExceptionBag, ExceptionBag} from 'exceptionbag';
 
 try {
   // axios.get request
 } catch (error) {
-  throw AxiosErrorBag.from('failed request x', error);
+  throw AxiosExceptionBag.from('failed request x', error);
 }
 ```
 
-Supports `@ThrowsAxiosErrorBag` decorator
+Supports `@ThrowsAxiosExceptionBag` decorator
 
 ```typescript
-import {ThrowsAxiosErrorBag} from "errorbag";
+import {ThrowsAxiosExceptionBag} from "exceptionbag";
 
 class MyApiHandler {
-  @ThrowsAxiosErrorBag()
+  @ThrowsAxiosExceptionBag()
   async getData(@InBag('userId') userId): Promise<any> {
     // fetch data
   }

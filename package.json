@@ -1,5 +1,5 @@
 {
-  "name": "errorbag",
+  "name": "exceptionbag",
   "description": "Error composition and utility library",
   "version": "1.0.0",
   "author": {

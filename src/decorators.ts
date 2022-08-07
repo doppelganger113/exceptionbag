@@ -1,18 +1,18 @@
 import 'reflect-metadata';
-import { BagValue, ErrorBag } from './ErrorBag';
+import { BagValue, ExceptionBag } from './ExceptionBag';
 import { catchError, Observable, throwError } from 'rxjs';
 import { Constructable } from './types';
 
 /* eslint-disable @typescript-eslint/ban-types */
 
-const createErrorBag = (
+const createExceptionBag = (
   message: string,
   error: Error,
   createException: ExceptionFactory,
   target: Object,
   argNames?: ArgName[],
   args?: unknown[],
-): ErrorBag => {
+): ExceptionBag => {
   const exception = createException(message, error).with('class', target?.constructor?.name);
   if (!args || !argNames) {
     return exception;
@@ -26,7 +26,10 @@ const createErrorBag = (
   return exception;
 };
 
-export type ExceptionFactory = (description: string, err?: Error | ErrorBag | string | number | boolean) => ErrorBag;
+export type ExceptionFactory = (
+  description: string,
+  err?: Error | ExceptionBag | string | number | boolean,
+) => ExceptionBag;
 
 export const inBagMetadataKey = Symbol('InBag');
 
@@ -55,13 +58,13 @@ export function InBag(name?: string) {
 export interface ThrowsOptions<T extends Constructable> {
   /**
    * @description Specify which error classes/class to ignore (not wrap)
-   * @example @ThrowsErrorBag({ ignore: CustomClass }
+   * @example @ThrowsExceptionBag({ ignore: CustomClass }
    */
   ignore: T[] | T;
   message?: string;
 }
 
-type ErrorBagCreatorFunc<T extends Constructable> = (
+type ExceptionBagCreatorFunc<T extends Constructable> = (
   options?: string | ThrowsOptions<T>,
 ) => any | Promise<any> | Observable<any>;
 
@@ -94,12 +97,12 @@ export const shouldThrowOriginalError = <T extends Constructable>(
 };
 
 /**
- * @description Simplifies creation of ErrorBag decorator and it's subclasses
+ * @description Simplifies creation of ExceptionBag decorator and it's subclasses
  */
-export function createErrorBagDecorator<T extends Constructable>(
+export function createExceptionBagDecorator<T extends Constructable>(
   createException: ExceptionFactory,
-): ErrorBagCreatorFunc<T> {
-  return function ErrorBagCreator(options?: string | ThrowsOptions<T>) {
+): ExceptionBagCreatorFunc<T> {
+  return function ExceptionBagCreator(options?: string | ThrowsOptions<T>) {
     return function (target: Object, propertyName: string, descriptor: TypedPropertyDescriptor<Function>) {
       const method = descriptor.value as Function;
       const msg = getMessage<T>(options) || `failed ${target?.constructor?.name} ${propertyName}`;
@@ -120,7 +123,7 @@ export function createErrorBagDecorator<T extends Constructable>(
               if (shouldThrowOriginalError(error, options)) {
                 throw error;
               }
-              throw createErrorBag(msg, error as Error, createException, target, inBagParameters, args);
+              throw createExceptionBag(msg, error as Error, createException, target, inBagParameters, args);
             });
           }
           if (applied instanceof Observable) {
@@ -131,7 +134,7 @@ export function createErrorBagDecorator<T extends Constructable>(
                     return error as Error;
                   }
 
-                  return createErrorBag(msg, error as Error, createException, target, inBagParameters, args);
+                  return createExceptionBag(msg, error as Error, createException, target, inBagParameters, args);
                 }),
               ),
             );
@@ -143,7 +146,7 @@ export function createErrorBagDecorator<T extends Constructable>(
             throw error;
           }
 
-          throw createErrorBag(msg, error as Error, createException, target, inBagParameters, args);
+          throw createExceptionBag(msg, error as Error, createException, target, inBagParameters, args);
         }
       };
     };

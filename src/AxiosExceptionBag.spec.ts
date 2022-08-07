@@ -1,8 +1,8 @@
 import axios, { AxiosError } from 'axios';
-import { AxiosErrorBag, AxiosSource } from './AxiosErrorBag';
+import { AxiosExceptionBag, AxiosSource } from './AxiosExceptionBag';
 import { createDummyServer, DummyServer } from './TestServer';
 
-describe('AxiosErrorBag', () => {
+describe('AxiosExceptionBag', () => {
   let dummyServer: DummyServer;
 
   beforeAll(() => {
@@ -20,16 +20,16 @@ describe('AxiosErrorBag', () => {
       try {
         await axios.get(`${dummyServer.url}/tasks?state=bad`);
       } catch (error) {
-        expect(AxiosErrorBag.isAxiosError(error)).toBeTruthy();
+        expect(AxiosExceptionBag.isAxiosError(error)).toBeTruthy();
       }
     });
     it('should not fail on null or undefined errors', () => {
-      expect(AxiosErrorBag.isAxiosError(null)).toBe(false);
-      expect(AxiosErrorBag.isAxiosError(undefined)).toBe(false);
-      expect(AxiosErrorBag.isAxiosError(true)).toBe(false);
-      expect(AxiosErrorBag.isAxiosError('')).toBe(false);
-      expect(AxiosErrorBag.isAxiosError(0)).toBe(false);
-      expect(AxiosErrorBag.isAxiosError('true')).toBe(false);
+      expect(AxiosExceptionBag.isAxiosError(null)).toBe(false);
+      expect(AxiosExceptionBag.isAxiosError(undefined)).toBe(false);
+      expect(AxiosExceptionBag.isAxiosError(true)).toBe(false);
+      expect(AxiosExceptionBag.isAxiosError('')).toBe(false);
+      expect(AxiosExceptionBag.isAxiosError(0)).toBe(false);
+      expect(AxiosExceptionBag.isAxiosError('true')).toBe(false);
     });
   });
 
@@ -39,7 +39,7 @@ describe('AxiosErrorBag', () => {
       try {
         throw new Error('Testing something');
       } catch (error) {
-        throw AxiosErrorBag.from('testing failure', error as Error);
+        throw AxiosExceptionBag.from('testing failure', error as Error);
       }
     };
     const myFunc2 = async () => {
@@ -55,7 +55,7 @@ describe('AxiosErrorBag', () => {
       try {
         await myFunc3();
       } catch (error) {
-        const err = error as AxiosErrorBag;
+        const err = error as AxiosExceptionBag;
         expect(err.stack).not.toContain('Function.fromAxiosError');
         expect(err.stack).not.toContain('Function.from');
       }
@@ -63,17 +63,17 @@ describe('AxiosErrorBag', () => {
   });
 
   describe('fromAxiosError', () => {
-    it('should properly create AxiosErrorBag from axios response error', async () => {
+    it('should properly create AxiosExceptionBag from axios response error', async () => {
       /* eslint-disable jest/no-conditional-expect */
       // expect.assertions(12);
       try {
         const client = axios.create({ baseURL: 'http://localhost', timeout: 2_000 });
         await client.get(`${dummyServer.url}/tasks?state=bad`);
       } catch (error) {
-        expect(AxiosErrorBag.isAxiosError(error)).toBeTruthy();
+        expect(AxiosExceptionBag.isAxiosError(error)).toBeTruthy();
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const axiosErr = AxiosErrorBag.fromAxiosError('failed fetching tasks', error);
+        const axiosErr = AxiosExceptionBag.fromAxiosError('failed fetching tasks', error);
         expect(axiosErr.message).toBe('failed fetching tasks: Request failed with status code 400');
 
         const bag = axiosErr.getBag();
@@ -109,16 +109,16 @@ describe('AxiosErrorBag', () => {
       }
     });
 
-    it('should properly create AxiosErrorBag from axios request error', async () => {
+    it('should properly create AxiosExceptionBag from axios request error', async () => {
       /* eslint-disable jest/no-conditional-expect */
       // expect.assertions(12);
       try {
         await axios.get(`${dummyServer.url}/tasks?state=bad`);
       } catch (error) {
-        expect(AxiosErrorBag.isAxiosError(error)).toBeTruthy();
+        expect(AxiosExceptionBag.isAxiosError(error)).toBeTruthy();
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const axiosErr = AxiosErrorBag.fromAxiosError('failed fetching tasks', error);
+        const axiosErr = AxiosExceptionBag.fromAxiosError('failed fetching tasks', error);
         expect(axiosErr.message).toBe('failed fetching tasks: Request failed with status code 400');
 
         const bag = axiosErr.getBag();
@@ -151,16 +151,16 @@ describe('AxiosErrorBag', () => {
       }
     });
 
-    it('should properly create AxiosErrorBag from axios response text error', async () => {
+    it('should properly create AxiosExceptionBag from axios response text error', async () => {
       /* eslint-disable jest/no-conditional-expect */
       // expect.assertions(12);
       try {
         await axios.get(`${dummyServer.url}/tasks?state=fail`);
       } catch (error) {
-        expect(AxiosErrorBag.isAxiosError(error)).toBeTruthy();
+        expect(AxiosExceptionBag.isAxiosError(error)).toBeTruthy();
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const axiosErr = AxiosErrorBag.fromAxiosError('failed fetching tasks', error);
+        const axiosErr = AxiosExceptionBag.fromAxiosError('failed fetching tasks', error);
         expect(axiosErr.message).toBe('failed fetching tasks: Request failed with status code 500');
 
         const bag = axiosErr.getBag();
@@ -197,7 +197,7 @@ describe('AxiosErrorBag', () => {
       try {
         await axios.get(`${dummyServer.url}/tasks?state=bad`);
       } catch (error) {
-        throw AxiosErrorBag.fromAxiosError('this failed', error as AxiosError);
+        throw AxiosExceptionBag.fromAxiosError('this failed', error as AxiosError);
       }
     };
     const myFunc2 = async () => {
@@ -213,7 +213,7 @@ describe('AxiosErrorBag', () => {
       try {
         await myFunc3();
       } catch (error) {
-        const err = error as AxiosErrorBag;
+        const err = error as AxiosExceptionBag;
         expect(err.stack).not.toContain('Function.fromAxiosError');
         expect(err.stack).not.toContain('Function.from');
       }

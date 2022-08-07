@@ -1,9 +1,9 @@
-import { ErrorBag } from './ErrorBag';
-import { AxiosErrorBag } from './AxiosErrorBag';
+import { ExceptionBag } from './ExceptionBag';
+import { AxiosExceptionBag } from './AxiosExceptionBag';
 import { createDummyServer, DummyServer } from './TestServer';
 import axios from 'axios';
 
-describe('ErrorBag', () => {
+describe('ExceptionBag', () => {
   let dummyServer: DummyServer;
 
   beforeAll(() => {
@@ -16,15 +16,15 @@ describe('ErrorBag', () => {
 
   describe('constructor', () => {
     it('should create in standard way', () => {
-      const err = ErrorBag.from('We failed!');
+      const err = ExceptionBag.from('We failed!');
       expect(err.message).toBe('We failed!');
-      expect(err.name).toBe('ErrorBag');
+      expect(err.name).toBe('ExceptionBag');
       expect(err.stack).toBeTruthy();
-      expect(err).toBeInstanceOf(ErrorBag);
+      expect(err).toBeInstanceOf(ExceptionBag);
     });
 
     it('should allow mapping with key value pairs', () => {
-      const err = ErrorBag.from('We failed!').with('userId', 1234).with('name', 'John').with('isAdmin', true);
+      const err = ExceptionBag.from('We failed!').with('userId', 1234).with('name', 'John').with('isAdmin', true);
 
       expect(err.get('userId')).toBe(1234);
       expect(err.get('name')).toBe('John');
@@ -32,7 +32,7 @@ describe('ErrorBag', () => {
     });
 
     it('should allow mapping with objects', () => {
-      const err = ErrorBag.from('We failed!').with({
+      const err = ExceptionBag.from('We failed!').with({
         myNumber: NaN,
         userId: 1234,
         name: 'John',
@@ -51,7 +51,7 @@ describe('ErrorBag', () => {
     });
 
     it('should handle arrays, even though not preferred', () => {
-      const exception = ErrorBag.from('We failed!').with([{ value: 'whatever' }]);
+      const exception = ExceptionBag.from('We failed!').with([{ value: 'whatever' }]);
       expect(JSON.parse(exception.get('0') as string)).toEqual({ value: 'whatever' });
     });
   });
@@ -70,7 +70,7 @@ describe('ErrorBag', () => {
         isAdmin: true,
       };
 
-      const exception = ErrorBag.from('whatever').withSpread(anObject);
+      const exception = ExceptionBag.from('whatever').withSpread(anObject);
 
       const { name, id, nested, isAdmin } = exception.getBag();
       expect(name).toBe('John');
@@ -98,7 +98,7 @@ describe('ErrorBag', () => {
         isAdmin: true,
       };
 
-      const exception = ErrorBag.from('whatever').withSpread(anObject);
+      const exception = ExceptionBag.from('whatever').withSpread(anObject);
       expect(exception.getBag()).toEqual({
         name: 'John',
         id: '1234',
@@ -110,7 +110,7 @@ describe('ErrorBag', () => {
       person.id = '1234';
       person.name = 'John';
 
-      const exception2 = ErrorBag.from('whatever').withSpread(person);
+      const exception2 = ExceptionBag.from('whatever').withSpread(person);
       expect(exception2.getBag()).toEqual({
         name: 'John',
         id: '1234',
@@ -121,48 +121,48 @@ describe('ErrorBag', () => {
     it('should not do anything on empty map', () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      expect(ErrorBag.from('whatever').withSpread(null).getBag()).toEqual({});
+      expect(ExceptionBag.from('whatever').withSpread(null).getBag()).toEqual({});
     });
   });
 
   describe('from', () => {
     it('should create from standard error and wrap', () => {
       const err = new Error('something failed');
-      const exception = ErrorBag.from('testing failure', err);
-      expect(exception).toBeInstanceOf(ErrorBag);
-      expect(exception.name).toBe('ErrorBag');
+      const exception = ExceptionBag.from('testing failure', err);
+      expect(exception).toBeInstanceOf(ExceptionBag);
+      expect(exception.name).toBe('ExceptionBag');
       expect(exception.message).toBe('testing failure: Error something failed');
       expect(exception.getBag()).toEqual({});
     });
 
-    it('should properly wrap ErrorBag', () => {
-      const err = ErrorBag.from('something failed').with('userId', 1234).with('name', 'John');
+    it('should properly wrap ExceptionBag', () => {
+      const err = ExceptionBag.from('something failed').with('userId', 1234).with('name', 'John');
 
-      const exception = ErrorBag.from('testing failure', err).with('name', 'Mary');
-      expect(exception).toBeInstanceOf(ErrorBag);
-      expect(exception.name).toBe('ErrorBag');
+      const exception = ExceptionBag.from('testing failure', err).with('name', 'Mary');
+      expect(exception).toBeInstanceOf(ExceptionBag);
+      expect(exception.name).toBe('ExceptionBag');
       expect(exception.message).toBe('testing failure: something failed');
       expect(exception.getBag()).toEqual({ userId: 1234, name: 'Mary' });
     });
 
-    it('should properly wrap AxiosErrorBag', async () => {
+    it('should properly wrap AxiosExceptionBag', async () => {
       /* eslint-disable jest/no-conditional-expect */
       expect.assertions(6);
       try {
         await axios.get(`${dummyServer.url}/tasks?state=bad`);
       } catch (error) {
-        expect(AxiosErrorBag.isAxiosError(error)).toBeTruthy();
+        expect(AxiosExceptionBag.isAxiosError(error)).toBeTruthy();
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const axiosErr = AxiosErrorBag.fromAxiosError('failed fetching tasks', error);
-        const exception = ErrorBag.from('failed business logic', axiosErr).with('custom', 1111);
+        const axiosErr = AxiosExceptionBag.fromAxiosError('failed fetching tasks', error);
+        const exception = ExceptionBag.from('failed business logic', axiosErr).with('custom', 1111);
 
         expect(exception.message).toBe(
           'failed business logic: failed fetching tasks: Request failed with status code 400',
         );
-        expect(exception.name).toBe('AxiosErrorBag');
+        expect(exception.name).toBe('AxiosExceptionBag');
         expect(exception.get('custom')).toBe(1111);
-        expect(exception).toBeInstanceOf(AxiosErrorBag);
+        expect(exception).toBeInstanceOf(AxiosExceptionBag);
         expect(exception.get('axios_status')).toBe(400);
       }
     });
@@ -180,9 +180,9 @@ describe('ErrorBag', () => {
         }
       }
 
-      const exception = ErrorBag.from('we have failed', new CustomError('custom failure')).with('userId', 1234);
+      const exception = ExceptionBag.from('we have failed', new CustomError('custom failure')).with('userId', 1234);
 
-      expect(exception).toBeInstanceOf(ErrorBag);
+      expect(exception).toBeInstanceOf(ExceptionBag);
       expect(exception.isCauseInstanceOf(CustomError)).toBeTruthy();
       expect(exception.getBag()).toEqual({
         purpose: 'to test',
@@ -195,7 +195,7 @@ describe('ErrorBag', () => {
     it('should handle unexpected error values accordingly', () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      const exception = ErrorBag.from('we have failed', null).with('userId', 1234);
+      const exception = ExceptionBag.from('we have failed', null).with('userId', 1234);
 
       expect(exception.cause).toBeUndefined();
       expect(exception.message).toBe('we have failed');
@@ -203,7 +203,7 @@ describe('ErrorBag', () => {
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      const exception2 = ErrorBag.from('we have failed', 'text error').with('userId', 1234);
+      const exception2 = ExceptionBag.from('we have failed', 'text error').with('userId', 1234);
       expect(exception2.cause).toBe(undefined);
       expect(exception2.message).toBe('we have failed: text error (string)');
       expect(exception2.getBag()).toEqual({ userId: 1234 });
@@ -226,7 +226,7 @@ describe('ErrorBag', () => {
           try {
             myFunc1();
           } catch (err) {
-            throw ErrorBag.from('wrapping error', err as Error);
+            throw ExceptionBag.from('wrapping error', err as Error);
           }
         };
         const myFunc3 = () => {
@@ -248,7 +248,7 @@ describe('ErrorBag', () => {
           try {
             myFunc1();
           } catch (err) {
-            throw ErrorBag.from('wrapping error', err as Error);
+            throw ExceptionBag.from('wrapping error', err as Error);
           }
         };
         const myFunc3 = () => {
