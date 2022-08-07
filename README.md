@@ -5,21 +5,30 @@ Node.js package for easier error composition and debugging.
 Provides `ExceptionBag` type of Error class that allows adding metadata to errors and chaining the errors to create
 more descriptive messages about the error failure flow.
 
-[[_TOC_]]
+<!-- TOC -->
+* [ExceptionBag](#exceptionbag)
+  * [Install](#install)
+  * [Usage](#usage)
+    * [Basic](#basic)
+    * [Annotations](#annotations)
+      * [Custom decorators](#custom-decorators)
+    * [Usage as Nest.js filter](#usage-as-nestjs-filter)
+    * [Extending](#extending)
+  * [ExceptionBag extensions](#exceptionbag-extensions)
+    * [AxiosExceptionBag](#axiosexceptionbag)
+  * [Publishing package](#publishing-package)
+  * [Changelog](#changelog)
+<!-- TOC -->
 
-## Changelog
-
-Review changelog for releases at [CHANGELOG.md](./CHANGELOG.md).
-
-### Install
+## Install
 
 ```bash
-npm install --save-exact exceptionbag
+npm install --save-exact exceptionbag@latest
 ```
 
-### Usage
+## Usage
 
-#### Basic
+### Basic
 
 `ExceptionBag` is meant to be used as a wrapper for `Error` or `CustomError` classes while extending in case of `ExceptionBag`.
 
@@ -60,7 +69,7 @@ try {
 // { userId: 1234, membership: 'standard' }
 ```
 
-#### Annotations
+### Annotations
 
 For simple use cases, annotations can be used to decorate the method
 
@@ -128,7 +137,7 @@ const doSomeBusinessLogic = async (userId, membership) => {
 }
 ```
 
-##### Custom decorators
+#### Custom decorators
 
 You can create a custom decorator easily with the use of a helper function:
 
@@ -148,7 +157,7 @@ class MyHandler {
 }
 ```
 
-#### Usage as Nest.js filter
+### Usage as Nest.js filter
 
 Ensure that you create a Nest.js filter to catch these errors and properly handle them.
 
@@ -180,7 +189,7 @@ class ExceptionBagFilter implements ExceptionFilter {
 }
 ```
 
-#### Extending
+### Extending
 
 You can always extend the class when you want different type of handling.
 
@@ -192,11 +201,12 @@ class CustomExceptionBag extends ExceptionBag {
 }
 ```
 
-### Additional Error utility classes
+## Extensions
 
-List of existing custom `ExceptionBag` subclasses:
+### AxiosExceptionBag
 
-- `AxiosExceptionBag` - Detects and wraps axios error, along with some request and response information.
+Detects and wraps axios error, along with some request and response information like `status`, `baseUrl`, `source`, 
+`timeout`, `method`, `headers`, `responseData`, etc.
 
 ```typescript
 import {AxiosExceptionBag, ExceptionBag} from 'exceptionbag';
@@ -207,6 +217,26 @@ try {
   throw AxiosExceptionBag.from('failed request x', error);
 }
 ```
+
+Later can be used to extract details:
+
+```typescript
+import {AxiosExceptionBag} from "exceptionbag";
+
+try {
+
+} catch (error) {
+  if (error instanceof AxiosExceptionBag) {
+    if (error.hasStatus(400)) {
+      const response = error.getResponseData<{ message: string; code: number }>();
+      // handle response data
+    } else if (error.status > 400) {
+      // other type of handling
+    }
+  }
+}
+```
+
 
 Supports `@ThrowsAxiosExceptionBag` decorator
 
@@ -253,3 +283,6 @@ BREAKING CHANGE: This is a breaking change.
 
 These messages will instruct the semantic releaser to update to appropriate semantic version.
 
+## Changelog
+
+Review changelog for releases at [CHANGELOG.md](./CHANGELOG.md).
