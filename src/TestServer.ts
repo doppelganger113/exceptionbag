@@ -1,7 +1,12 @@
-import { Express } from 'express';
 import * as express from 'express';
+import { AddressInfo } from 'net';
 
-export const createDummyServer = (): Express => {
+export interface DummyServer {
+  url: string;
+  close: () => void;
+}
+
+export const createDummyServer = (): DummyServer => {
   const app = express();
   app.get('/tasks', (req, res) => {
     switch (req.query.state) {
@@ -22,5 +27,13 @@ export const createDummyServer = (): Express => {
     }
   });
 
-  return app;
+  const server = app.listen(0);
+  const { port } = server.address() as AddressInfo;
+  const url = `http://localhost:${port}`;
+
+  const close = (): void => {
+    server.close();
+  };
+
+  return { url, close };
 };

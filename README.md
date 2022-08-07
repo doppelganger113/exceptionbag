@@ -60,6 +60,74 @@ try {
 // { userId: 1234, membership: 'standard' }
 ```
 
+#### Annotations
+
+For simple use cases, annotations can be used to decorate the method
+
+```typescript
+import {ThrowsErrorBag} from "errorbag";
+
+class MyService {
+
+  @ThrowsErrorBag('failed some business logic') // No message will add the class name and method name as reference
+  async doSomeBusinessLogic(@InBag('userId') userId, @InBag('membership') membership) { // @InBag decorator adds key and value to the error bag
+    // handle some business logic with user's membership
+  }
+}
+```
+
+This is identical to:
+
+```typescript
+const doSomeBusinessLogic = async (userId, membership) => {
+  try {
+    // handle some business logic with user's membership
+  } catch (error) {
+    throw ErrorBag.from('failed some business logic', error)
+      .with('userId', userId)
+      .with('membership', membership);
+  }
+}
+```
+
+It is also possible to ignore certain errors and propagate them further
+
+```typescript
+import {ThrowsErrorBag} from "errorbag";
+
+class CustomError extends Error {
+  public constructor(msg?: string) {
+    super(msg);
+    this.name = CustomError.name;
+  }
+}
+
+class MyService {
+
+  @ThrowsErrorBag({ignore: CustomError}) // Re-throw CustomError instead of wrapping
+  async doSomeBusinessLogic(userId, membership) {
+    // handle some business logic with user's membership
+  }
+}
+```
+
+This is identical to:
+
+```typescript
+const doSomeBusinessLogic = async (userId, membership) => {
+  try {
+    // handle some business logic with user's membership
+  } catch (error) {
+    if (error instanceof CustomError) {
+      throw error;
+    }
+    throw ErrorBag.from('failed some business logic', error)
+      .with('userId', userId)
+      .with('membership', membership);
+  }
+}
+```
+
 #### Usage as Nest.js filter
 
 Ensure that you create a Nest.js filter to catch these errors and properly handle them.
@@ -116,13 +184,20 @@ import {AxiosErrorBag, ErrorBag} from 'errorbag';
 try {
   // axios.get request
 } catch (error) {
-  if (AxiosErrorBag.isAxiosError(error)) {
-    // AxiosErrorBag will extract axios error data as meta data.
-    throw AxiosErrorBag.fromAxiosError('failed request x', error);
-  }
+  throw AxiosErrorBag.from('failed request x', error);
+}
+```
 
-  // Since it's not axios we should do a default wrap
-  throw ErrorBag.from('failed request x', error);
+Supports `@ThrowsAxiosErrorBag` decorator
+
+```typescript
+import {ThrowsAxiosErrorBag} from "errorbag";
+
+class MyApiHandler {
+  @ThrowsAxiosErrorBag()
+  async getData(@InBag('userId') userId): Promise<any> {
+    // fetch data
+  }
 }
 ```
 

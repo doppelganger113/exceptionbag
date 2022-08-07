@@ -1,20 +1,17 @@
-import * as http from 'http';
-import { createDummyServer } from './TestServer';
-import axios from 'axios';
 import { ErrorBag } from './ErrorBag';
 import { AxiosErrorBag } from './AxiosErrorBag';
+import { createDummyServer, DummyServer } from './TestServer';
+import axios from 'axios';
 
 describe('ErrorBag', () => {
-  let server: http.Server;
+  let dummyServer: DummyServer;
 
   beforeAll(() => {
-    server = createDummyServer().listen(3010);
+    dummyServer = createDummyServer();
   });
 
   afterAll(() => {
-    if (server) {
-      server.close();
-    }
+    dummyServer.close();
   });
 
   describe('constructor', () => {
@@ -24,6 +21,107 @@ describe('ErrorBag', () => {
       expect(err.name).toBe('ErrorBag');
       expect(err.stack).toBeTruthy();
       expect(err).toBeInstanceOf(ErrorBag);
+    });
+
+    it('should allow mapping with key value pairs', () => {
+      const err = ErrorBag.from('We failed!').with('userId', 1234).with('name', 'John').with('isAdmin', true);
+
+      expect(err.get('userId')).toBe(1234);
+      expect(err.get('name')).toBe('John');
+      expect(err.get('isAdmin')).toBe(true);
+    });
+
+    it('should allow mapping with objects', () => {
+      const err = ErrorBag.from('We failed!').with({
+        myNumber: NaN,
+        userId: 1234,
+        name: 'John',
+        isAdmin: true,
+        person: {
+          name: 'Mary',
+          age: 25,
+        },
+      });
+
+      expect(err.get('myNumber')).toBe(NaN);
+      expect(err.get('userId')).toBe(1234);
+      expect(err.get('name')).toBe('John');
+      expect(err.get('isAdmin')).toBe(true);
+      expect(JSON.parse(err.get('person') as string)).toEqual({ name: 'Mary', age: 25 });
+    });
+
+    it('should handle arrays, even though not preferred', () => {
+      const exception = ErrorBag.from('We failed!').with([{ value: 'whatever' }]);
+      expect(JSON.parse(exception.get('0') as string)).toEqual({ value: 'whatever' });
+    });
+  });
+
+  describe('withSpread', () => {
+    it("should spread object and it's properties in the bag", () => {
+      const anObject = {
+        name: 'John',
+        id: '1234',
+        nested: {
+          address: {
+            street: "Saint John's",
+          },
+          number: 3,
+        },
+        isAdmin: true,
+      };
+
+      const exception = ErrorBag.from('whatever').withSpread(anObject);
+
+      const { name, id, nested, isAdmin } = exception.getBag();
+      expect(name).toBe('John');
+      expect(id).toBe('1234');
+      expect(isAdmin).toBe(true);
+      expect(JSON.parse(nested as string)).toEqual(anObject.nested);
+    });
+
+    it('should work with interface and classes', () => {
+      interface ICustom {
+        name: string;
+        id: string;
+        isAdmin: boolean;
+      }
+
+      class Person {
+        name: string;
+        id: string;
+        isAdmin: boolean;
+      }
+
+      const anObject: ICustom = {
+        name: 'John',
+        id: '1234',
+        isAdmin: true,
+      };
+
+      const exception = ErrorBag.from('whatever').withSpread(anObject);
+      expect(exception.getBag()).toEqual({
+        name: 'John',
+        id: '1234',
+        isAdmin: true,
+      });
+
+      const person = new Person();
+      person.isAdmin = true;
+      person.id = '1234';
+      person.name = 'John';
+
+      const exception2 = ErrorBag.from('whatever').withSpread(person);
+      expect(exception2.getBag()).toEqual({
+        name: 'John',
+        id: '1234',
+        isAdmin: true,
+      });
+    });
+
+    it('should not do anything on empty map', () => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      expect(ErrorBag.from('whatever').withSpread(null).getBag()).toEqual({});
     });
   });
 
@@ -51,7 +149,7 @@ describe('ErrorBag', () => {
       /* eslint-disable jest/no-conditional-expect */
       expect.assertions(6);
       try {
-        await axios.get('http://localhost:3010/tasks?state=bad');
+        await axios.get(`${dummyServer.url}/tasks?state=bad`);
       } catch (error) {
         expect(AxiosErrorBag.isAxiosError(error)).toBeTruthy();
 
@@ -99,14 +197,14 @@ describe('ErrorBag', () => {
       // @ts-ignore
       const exception = ErrorBag.from('we have failed', null).with('userId', 1234);
 
-      expect(exception.getCause()).toBeUndefined();
+      expect(exception.cause).toBeUndefined();
       expect(exception.message).toBe('we have failed');
       expect(exception.getBag()).toEqual({ userId: 1234 });
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const exception2 = ErrorBag.from('we have failed', 'text error').with('userId', 1234);
-      expect(exception2.getCause()).toBe(undefined);
+      expect(exception2.cause).toBe(undefined);
       expect(exception2.message).toBe('we have failed: text error (string)');
       expect(exception2.getBag()).toEqual({ userId: 1234 });
     });
@@ -160,32 +258,6 @@ describe('ErrorBag', () => {
       } catch (error) {
         const err = error as Error;
         expect(err.stack).not.toContain('Function.from');
-        expect(err.stack).toContain('at myFunc2');
-        expect(err.stack).toContain('at myFunc3');
-      }
-    });
-
-    it('should have a proper stack trace when ErrorBag Error is caught', () => {
-      expect.assertions(4);
-      try {
-        const myFunc1 = () => {
-          throw ErrorBag.from('original error');
-        };
-        const myFunc2 = () => {
-          try {
-            myFunc1();
-          } catch (err) {
-            throw ErrorBag.from('wrapping error', err as Error);
-          }
-        };
-        const myFunc3 = () => {
-          myFunc2();
-        };
-        myFunc3();
-      } catch (error) {
-        const err = error as Error;
-        expect(err.stack).not.toContain('Function.from');
-        expect(err.stack).toContain('at myFunc1');
         expect(err.stack).toContain('at myFunc2');
         expect(err.stack).toContain('at myFunc3');
       }
