@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createErrorBagDecorator = exports.shouldThrowOriginalError = exports.getMessage = exports.InBag = exports.inBagMetadataKey = void 0;
+exports.createExceptionBagDecorator = exports.shouldThrowOriginalError = exports.getMessage = exports.InBag = exports.inBagMetadataKey = void 0;
 require("reflect-metadata");
 const rxjs_1 = require("rxjs");
 /* eslint-disable @typescript-eslint/ban-types */
-const createErrorBag = (message, error, createException, target, argNames, args) => {
+const createExceptionBag = (message, error, createException, target, argNames, args) => {
     var _a;
     const exception = createException(message, error).with('class', (_a = target === null || target === void 0 ? void 0 : target.constructor) === null || _a === void 0 ? void 0 : _a.name);
     if (!args || !argNames) {
@@ -54,10 +54,10 @@ const shouldThrowOriginalError = (error, options) => {
 };
 exports.shouldThrowOriginalError = shouldThrowOriginalError;
 /**
- * @description Simplifies creation of ErrorBag decorator and it's subclasses
+ * @description Simplifies creation of ExceptionBag decorator and it's subclasses
  */
-function createErrorBagDecorator(createException) {
-    return function ErrorBagCreator(options) {
+function createExceptionBagDecorator(createException) {
+    return function ExceptionBagCreator(options) {
         return function (target, propertyName, descriptor) {
             var _a;
             const method = descriptor.value;
@@ -72,7 +72,7 @@ function createErrorBagDecorator(createException) {
                             if ((0, exports.shouldThrowOriginalError)(error, options)) {
                                 throw error;
                             }
-                            throw createErrorBag(msg, error, createException, target, inBagParameters, args);
+                            throw createExceptionBag(msg, error, createException, target, inBagParameters, args);
                         });
                     }
                     if (applied instanceof rxjs_1.Observable) {
@@ -80,7 +80,7 @@ function createErrorBagDecorator(createException) {
                             if ((0, exports.shouldThrowOriginalError)(error, options)) {
                                 return error;
                             }
-                            return createErrorBag(msg, error, createException, target, inBagParameters, args);
+                            return createExceptionBag(msg, error, createException, target, inBagParameters, args);
                         })));
                     }
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -90,11 +90,11 @@ function createErrorBagDecorator(createException) {
                     if ((0, exports.shouldThrowOriginalError)(error, options)) {
                         throw error;
                     }
-                    throw createErrorBag(msg, error, createException, target, inBagParameters, args);
+                    throw createExceptionBag(msg, error, createException, target, inBagParameters, args);
                 }
             };
         };
     };
 }
-exports.createErrorBagDecorator = createErrorBagDecorator;
+exports.createExceptionBagDecorator = createExceptionBagDecorator;
 //# sourceMappingURL=decorators.js.map

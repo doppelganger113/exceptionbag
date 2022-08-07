@@ -1,8 +1,10 @@
-import { ErrorBag } from './src/ErrorBag';
-import { AxiosErrorBag, AxiosSource } from './src/AxiosErrorBag';
+import { ExceptionBag } from './src/ExceptionBag';
+import { AxiosExceptionBag, AxiosSource } from './src/AxiosExceptionBag';
 import { Bag } from './src/Bag';
-import { ThrowsErrorBag } from "./src/ThrowsErrorBag";
-import { ThrowsAxiosErrorBag } from "./src/ThrowsAxiosErrorBag";
-import { createErrorBagDecorator } from "./src/decorators";
-import { ExceptionFactory } from "./src/decorators";
-export { ErrorBag, AxiosSource, AxiosErrorBag, Bag, ThrowsErrorBag, ThrowsAxiosErrorBag, createErrorBagDecorator, ExceptionFactory };
+import { ThrowsExceptionBag } from "./src/ThrowsExceptionBag";
+import { ThrowsAxiosExceptionBag } from "./src/ThrowsAxiosExceptionBag";
+import { createExceptionBagDecorator } from "./src/decorators";
+import { ExceptionFactory, InBag } from "./src/decorators";
+import { ThrowsOptions } from "./src/decorators";
+import { Constructable, DecoratedFunc } from "./src/types";
+export { ExceptionBag, AxiosSource, AxiosExceptionBag, Bag, ThrowsExceptionBag, ThrowsAxiosExceptionBag, InBag, createExceptionBagDecorator, ExceptionFactory, ThrowsOptions, DecoratedFunc, Constructable };

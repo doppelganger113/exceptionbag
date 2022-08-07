@@ -1,4 +1,4 @@
-import { ErrorBag } from './ErrorBag';
+import { ExceptionBag } from './ExceptionBag';
 import { AxiosError } from 'axios';
 export declare enum AxiosSource {
     Unknown = "Unknown",
@@ -6,7 +6,7 @@ export declare enum AxiosSource {
     Response = "Response"
 }
 /**
- * @description Extension of {@link ErrorBag} used for wrapping AxiosError and providing specific error data info.
+ * @description Extension of {@link ExceptionBag} used for wrapping AxiosError and providing specific error data info.
  * To prevent accidentally overwriting **axios metadata** in bag creation will create metadata fields that start with
  * prefix: "axios_".
  *
@@ -14,10 +14,10 @@ export declare enum AxiosSource {
  * try {
  *   // execute axios request
  * } catch(error) {
- *   throw AxiosErrorBag.from('failed fetching user', error).with('userId', userId);
+ *   throw AxiosExceptionBag.from('failed fetching user', error).with('userId', userId);
  * }
  */
-export declare class AxiosErrorBag extends ErrorBag {
+export declare class AxiosExceptionBag extends ExceptionBag {
     readonly status: number;
     readonly statusText: string;
     readonly source: AxiosSource;
@@ -38,15 +38,15 @@ export declare class AxiosErrorBag extends ErrorBag {
     getResponseData<T>(): T | undefined;
     private static toHeaders;
     /**
-     * @description Create only if {@link AxiosErrorBag.isAxiosError} check was performed as you will be sure it
+     * @description Create only if {@link AxiosExceptionBag.isAxiosError} check was performed as you will be sure it
      * was an axios error type.
      *
-     * @deprecated Prefer {@link AxiosErrorBag.from} as it converts to {@link AxiosErrorBag} if axios, otherwise
-     * to {@link ErrorBag}
+     * @deprecated Prefer {@link AxiosExceptionBag.from} as it converts to {@link AxiosExceptionBag} if axios, otherwise
+     * to {@link ExceptionBag}
      */
-    static fromAxiosError(description: string, error: AxiosError): AxiosErrorBag;
+    static fromAxiosError(description: string, error: AxiosError): AxiosExceptionBag;
     /**
-     * @description Creates {@link AxiosErrorBag} if it's an axios error, otherwise a plain {@link ErrorBag}
+     * @description Creates {@link AxiosExceptionBag} if it's an axios error, otherwise a plain {@link ExceptionBag}
      */
-    static from(description: string, err?: Error | ErrorBag | string | number | boolean): ErrorBag;
+    static from(description: string, err?: Error | ExceptionBag | string | number | boolean): ExceptionBag;
 }
