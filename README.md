@@ -79,7 +79,7 @@ import {ThrowsExceptionBag} from "exceptionbag";
 class MyService {
 
   @ThrowsExceptionBag('failed some business logic') // No message will add the class name and method name as reference
-  async doSomeBusinessLogic(@InBag('userId') userId, @InBag('membership') membership) { // @InBag decorator adds key and value to the error bag
+  async doSomeBusinessLogic(@InBag('userId') userId, @InBag('membership') membership) { // @InBag decorators adds key and value to the error bag
     // handle some business logic with user's membership
   }
 }
@@ -194,10 +194,45 @@ class ExceptionBagFilter implements ExceptionFilter {
 You can always extend the class when you want different type of handling.
 
 ```typescript
-import {ExceptionBag} from 'exceptionbag';
+import { ExceptionBag } from 'exceptionbag';
 
 class CustomExceptionBag extends ExceptionBag {
   public responseStatus: number;
+
+  public constructor(msg: string, responseStatus: number, cause?: Error) {
+    super(msg, cause);
+    this.responseStatus = responseStatus;
+    this.name = CustomExceptionBag.name;
+  }
+}
+
+// The later use it
+try {
+  // ...
+  throw CustomExceptionBag.from('custom failure', new Error('failure')).with({ status: 303 });
+} catch (error) {
+  if(error instanceof CustomExceptionBag) {
+    // ... check response status
+  }
+}
+```
+And even create your own decorators for that class in the following way:
+
+```typescript
+import { createExceptionBagDecorator } from 'exceptionbag/decorators';
+
+function ThrowsCustomExceptionBag<T extends Constructable>(options?: ThrowsOptions<T>): DecoratedFunc;
+function ThrowsCustomExceptionBag(message?: string): DecoratedFunc;
+function ThrowsCustomExceptionBag<T extends Constructable>(message?: string | ThrowsOptions<T>): DecoratedFunc {
+  return createExceptionBagDecorator(CustomExceptionBag.from.bind(CustomExceptionBag))(message);
+}
+
+// And then use it
+class BusinessClass {
+  @ThrowsCustomExceptionBag('failed doWork')
+  doWork(@InBag('value') value) {
+    // some work...
+  }
 }
 ```
 
@@ -241,7 +276,7 @@ try {
 Supports `@ThrowsAxiosExceptionBag` decorator
 
 ```typescript
-import {ThrowsAxiosExceptionBag} from "exceptionbag";
+import {ThrowsAxiosExceptionBag} from "exceptionbag/decorators";
 
 class MyApiHandler {
   @ThrowsAxiosExceptionBag()

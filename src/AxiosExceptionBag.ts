@@ -133,7 +133,7 @@ export class AxiosExceptionBag extends ExceptionBag {
     let method = '';
     let headers: Record<string, string> = {};
 
-    const fullMessage = `${description}: ${error.message}`;
+    const fullMessage = `${description}: ${error.message || error.code || 'unknown'}`;
 
     if (typeof error.response === 'object') {
       // The request was made and the server responded with a status code
