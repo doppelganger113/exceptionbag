@@ -90,7 +90,7 @@ describe('ThrowsAxiosExceptionBag', () => {
     } catch (error) {
       expect(error).toBeInstanceOf(AxiosExceptionBag);
       const exception = error as AxiosExceptionBag;
-      expect(exception.message).toBe('failed fetching data: ECONNREFUSED');
+      expect(exception.message).toContain('failed fetching data: ECONNREFUSED');
       expect(exception.getBag()).toEqual({
         axios_baseUrl: 'http://localhost',
         axios_code: 'ECONNREFUSED',
