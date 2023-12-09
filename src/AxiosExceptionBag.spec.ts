@@ -90,7 +90,7 @@ describe('AxiosExceptionBag', () => {
 
         const parsedHeaders = JSON.parse(bag['axios_headers'] as string) as Record<string, string>;
         expect(parsedHeaders['x-powered-by']).toBe('Express');
-        expect(parsedHeaders['connection']).toBe('close');
+        expect(parsedHeaders['connection']).toBe('keep-alive');
         expect(parsedHeaders['transfer-encoding']).toBe('chunked');
         expect(parsedHeaders['content-type']).toBe('application/json; charset=utf-8');
 
@@ -175,7 +175,7 @@ describe('AxiosExceptionBag', () => {
 
         const parsedHeaders = JSON.parse(bag['axios_headers'] as string) as Record<string, string>;
         expect(parsedHeaders['x-powered-by']).toBe('Express');
-        expect(parsedHeaders['connection']).toBe('close');
+        expect(parsedHeaders['connection']).toBe('keep-alive');
         expect(parsedHeaders['transfer-encoding']).toBe('chunked');
         expect(parsedHeaders['content-type']).toBe(undefined);
 

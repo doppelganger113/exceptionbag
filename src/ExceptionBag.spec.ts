@@ -1,7 +1,15 @@
+import 'reflect-metadata';
 import { ExceptionBag } from './ExceptionBag';
 import { AxiosExceptionBag } from './AxiosExceptionBag';
 import { createDummyServer, DummyServer } from './TestServer';
 import axios from 'axios';
+
+class FatalExceptionBag extends ExceptionBag {
+  public constructor(msg: string, cause?: Error) {
+    super(msg, cause);
+    this.name = FatalExceptionBag.name;
+  }
+}
 
 describe('ExceptionBag', () => {
   let dummyServer: DummyServer;
@@ -261,6 +269,15 @@ describe('ExceptionBag', () => {
         expect(err.stack).toContain('at myFunc2');
         expect(err.stack).toContain('at myFunc3');
       }
+    });
+  });
+
+  describe('custom exception bag class', () => {
+    it('should be possible to extend the class and catch the extended instance', () => {
+      const exception = FatalExceptionBag.from('new fatal error', new Error('failure')).with({ name: 'John' });
+      expect(exception).toBeInstanceOf(FatalExceptionBag);
+      expect(exception).toBeInstanceOf(ExceptionBag);
+      expect(exception.getBag()).toEqual({ name: 'John' });
     });
   });
 });

@@ -5,8 +5,10 @@
     "removeComments": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    "declarationMap": true,
     "allowSyntheticDefaultImports": true,
-    "target": "es2015",
+    "target": "es2017",
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
@@ -16,7 +18,7 @@
     "strictBindCallApply": true
   },
   "include": [
-    "index.ts",
+    "src/index.ts",
     "src/**/*"
   ]
 }

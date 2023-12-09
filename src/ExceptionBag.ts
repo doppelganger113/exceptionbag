@@ -7,7 +7,7 @@ export interface MetaBag {
 }
 
 /**
- * @description Extension of {@link Error} class used for adding additional meta data which can then later be extracted
+ * @description Extension of {@link Error} class used for adding additional metadata which can then later be extracted
  * for easier debugging or logging purposes. {@link ExceptionBag} also extends the error message in a chain fashion
  * making it much easier to understand what caused the error in the chain.
  *
@@ -50,7 +50,7 @@ export class ExceptionBag extends Error {
    */
   public static from(description: string, err?: Error | ExceptionBag | string | number | boolean): ExceptionBag {
     if (!err) {
-      const exception = new ExceptionBag(description);
+      const exception = new this(description);
       // eslint-disable-next-line @typescript-eslint/unbound-method
       Error.captureStackTrace(exception, ExceptionBag.from);
       return exception;
@@ -61,18 +61,23 @@ export class ExceptionBag extends Error {
       return err;
     }
 
-    return ExceptionBag.fromError(description, err);
+    return (this && this.fromError(description, err)) || ExceptionBag.from(description, err);
   }
 
   private static fromError(description: string, err: Error | string | number | boolean): ExceptionBag {
     if (typeof err === 'string' || typeof err === 'number' || typeof err === 'boolean') {
-      const exception = new ExceptionBag(`${description}: ${String(err)} (${typeof err})`);
+
+      const msg = `${description}: ${String(err)} (${typeof err})`;
+      const exception = this ? new this(msg) : new ExceptionBag(msg);
+
       // eslint-disable-next-line @typescript-eslint/unbound-method
       Error.captureStackTrace(exception, ExceptionBag.from);
       return exception;
     }
 
-    const exception = new ExceptionBag(`${description}: ${err.name} ${err.message}`, err);
+    const msg = `${description}: ${err.name} ${err.message}`;
+    const exception = this ? new this(msg, err) : new ExceptionBag(msg, err);
+
     exception.stack = err.stack;
 
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
