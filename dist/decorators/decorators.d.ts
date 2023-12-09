@@ -1,8 +1,7 @@
 import 'reflect-metadata';
 import { ExceptionBag } from '../ExceptionBag';
-import { Observable } from 'rxjs';
-import { Constructable } from '../types';
-export declare type ExceptionFactory = (description: string, err?: Error | ExceptionBag | string | number | boolean) => ExceptionBag;
+import { Constructable, DecoratedFunc } from '../types';
+export type ExceptionFactory = (description: string, err?: Error | ExceptionBag | string | number | boolean) => ExceptionBag;
 export declare const inBagMetadataKey: unique symbol;
 export interface ArgName {
     index: number;
@@ -17,7 +16,7 @@ export interface ThrowsOptions<T extends Constructable> {
     ignore: T[] | T;
     message?: string;
 }
-declare type ExceptionBagCreatorFunc<T extends Constructable> = (options?: string | ThrowsOptions<T>) => any | Promise<any> | Observable<any>;
+type ExceptionBagCreatorFunc<T extends Constructable> = (options?: string | ThrowsOptions<T>) => DecoratedFunc;
 export declare const getMessage: <T extends Constructable>(options?: string | ThrowsOptions<T> | undefined) => string;
 export declare const shouldThrowOriginalError: <T extends Constructable>(error: unknown, options?: string | ThrowsOptions<T> | undefined) => boolean;
 /**

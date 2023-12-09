@@ -7,7 +7,7 @@ var AxiosSource;
     AxiosSource["Unknown"] = "Unknown";
     AxiosSource["Request"] = "Request";
     AxiosSource["Response"] = "Response";
-})(AxiosSource = exports.AxiosSource || (exports.AxiosSource = {}));
+})(AxiosSource || (exports.AxiosSource = AxiosSource = {}));
 const FIELD = {
     Data: 'axios_data',
     Status: 'axios_status',
@@ -33,6 +33,13 @@ const FIELD = {
  * }
  */
 class AxiosExceptionBag extends ExceptionBag_1.ExceptionBag {
+    static isAxiosError(error) {
+        if (error === undefined || error === null) {
+            return false;
+        }
+        const { isAxiosError } = error;
+        return Boolean(isAxiosError) || isAxiosError === 'true';
+    }
     constructor(msg, status, statusText, source, baseUrl, timeout, code, path, method, headers, responseData) {
         super(msg);
         this.name = AxiosExceptionBag.name;
@@ -46,13 +53,6 @@ class AxiosExceptionBag extends ExceptionBag_1.ExceptionBag {
         this.method = method;
         this.headers = headers;
         this.responseData = responseData;
-    }
-    static isAxiosError(error) {
-        if (error === undefined || error === null) {
-            return false;
-        }
-        const { isAxiosError } = error;
-        return Boolean(isAxiosError) || isAxiosError === 'true';
     }
     hasStatus(status) {
         return this.status === status;
@@ -90,11 +90,11 @@ class AxiosExceptionBag extends ExceptionBag_1.ExceptionBag {
      * to {@link ExceptionBag}
      */
     static fromAxiosError(description, error) {
-        var _a;
-        const baseUrl = error.config.baseURL || '';
-        const timeout = error.config.timeout || 0;
+        var _a, _b, _c, _d;
+        const baseUrl = ((_a = error.config) === null || _a === void 0 ? void 0 : _a.baseURL) || '';
+        const timeout = ((_b = error.config) === null || _b === void 0 ? void 0 : _b.timeout) || 0;
         const code = error.code || '';
-        const status = ((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) || 0;
+        const status = ((_c = error.response) === null || _c === void 0 ? void 0 : _c.status) || 0;
         let statusText = '';
         let responseData;
         let source = AxiosSource.Unknown;
@@ -120,7 +120,7 @@ class AxiosExceptionBag extends ExceptionBag_1.ExceptionBag {
             const req = error.request;
             source = AxiosSource.Request;
             path = req.path || '';
-            method = error.config.method || '';
+            method = ((_d = error.config) === null || _d === void 0 ? void 0 : _d.method) || '';
         }
         method = method.toUpperCase();
         const exception = new AxiosExceptionBag(fullMessage, status, statusText, source, baseUrl, timeout, code, path, method, headers, responseData)

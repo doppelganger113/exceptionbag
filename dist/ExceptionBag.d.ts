@@ -1,5 +1,5 @@
 import { Constructable } from './types';
-export declare type BagValue = string | number | boolean | undefined;
+export type BagValue = string | number | boolean | undefined;
 export interface MetaBag {
     [key: string]: BagValue;
 }

@@ -27,12 +27,6 @@ exports.ExceptionBag = void 0;
  *  }
  */
 class ExceptionBag extends Error {
-    constructor(msg, cause) {
-        super(msg);
-        this.meta = {};
-        this.name = ExceptionBag.name;
-        this.cause = cause;
-    }
     /**
      * @description Used to wrap basic {@link Error} classes or custom ones into {@link ExceptionBag}. If the error is of
      * type {@link ExceptionBag} then it is returned with only the message extended with description. Note that in both
@@ -88,6 +82,12 @@ class ExceptionBag extends Error {
             }
         });
         return exception;
+    }
+    constructor(msg, cause) {
+        super(msg);
+        this.meta = {};
+        this.name = ExceptionBag.name;
+        this.cause = cause;
     }
     with(firstArg, secondArg) {
         if (typeof firstArg === 'string') {
