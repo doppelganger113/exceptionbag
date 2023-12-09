@@ -1,9 +1,61 @@
 # ExceptionBag
 
+![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/doppelganger113/exceptionbag/release.yaml)
+[![npm version](https://badge.fury.io/js/exceptionbag.svg)](https://badge.fury.io/js/exceptionbag)
+
 Node.js package for easier error composition and debugging.
 
 Provides `ExceptionBag` type of Error class that allows adding metadata to errors and chaining the errors to create
 more descriptive messages about the error failure flow.
+
+Motivation for needing such a library is in cases when you are dealing with an older library that returns errors
+through callbacks, thus losing the stack trace you end up getting a vague error that tells you nothing.
+
+```javascript
+// Somewhere in your method
+oldLibrary.execute(id, (data, err) => {
+  if(err) {
+    cb(undefined, err);
+    return;
+  }
+  
+  cb(data);
+})
+```
+The error above gets propagated via callbacks will have the internal stack of the library but not where it happened
+in your app and the message will be vague. Solving it with `ExceptionBag` would look like this:
+```javascript
+oldLibrary.execute(id, (data, err) => {
+  if(err) {
+    cb(undefined, 
+      ExceptionBag
+          .from('failed executing old library', err)
+          .with({id})
+    );
+    return;
+  }
+  
+  cb(data);
+})
+```
+Later on during when the callbacks stop and so you get into Promise based world you can stop wrapping them and catch them
+with all the metadata accumulated along the way.
+```javascript
+try {
+  await myOperation(id);
+} catch (error) {
+  if(error instanceof ExceptionBag) {
+    console.log(error.message, error.getBag());
+    // console.log(error.stack) you can also access the stack trace
+    // console.error(error.cause) and the original error that caused the bubbling up
+  } 
+}
+```
+You would get:
+```text
+failed executing old library: ECONNRESET unable to connect { id: 1}
+```
+and you can chain these as much as you want to get the best descriptive message where what happened in your code.
 
 <!-- TOC -->
 * [ExceptionBag](#exceptionbag)
