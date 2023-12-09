@@ -44,19 +44,19 @@ describe('ThrowsExceptionBag', () => {
 
   class MyClass {
     @ThrowsExceptionBag()
-    async getUser(password: string, @InBag('username') username: string) {
+    async getUser(_password: string, @InBag('username') _username: string) {
       return new Promise((resolve, reject) => {
         setTimeout(() => reject(new Error('we have failed fetching user')), 100);
       });
     }
 
     @ThrowsExceptionBag('failed handling user')
-    async handleUser(@InBag('id') id: string, @InBag('value') value?: any) {
+    async handleUser(@InBag('id') _id: string, @InBag('value') _value?: unknown) {
       return this.getUser('1234', 'admin');
     }
 
     @ThrowsExceptionBag({ ignore: CustomHttpException, message: 'bad user handling' })
-    async handleUserWithIgnore(@InBag('id') id: string, @InBag('value') value?: any) {
+    async handleUserWithIgnore(@InBag('id') id: string, @InBag('value') _value?: unknown) {
       if (id === '1') {
         throw new CustomHttpException('custom failure');
       }
@@ -80,7 +80,7 @@ describe('ThrowsExceptionBag', () => {
       ignore: [CustomParentException, RandomException],
       message: 'bad user handling',
     })
-    async handleUserWithMultiIgnore(@InBag('id') id: string, @InBag('value') value?: any) {
+    async handleUserWithMultiIgnore(@InBag('id') id: string, @InBag('value') _value?: unknown) {
       if (id === '1') {
         throw new CustomParentException('custom failure');
       }
@@ -171,14 +171,14 @@ describe('ThrowsExceptionBag', () => {
     });
 
     it('should be able to work with custom decorators', () => {
-      function ThrowsFatalErrorBag<T extends Constructable>(options?: ThrowsOptions<T>): DecoratedFunc;
-      function ThrowsFatalErrorBag(message?: string): DecoratedFunc;
-      function ThrowsFatalErrorBag<T extends Constructable>(message?: string | ThrowsOptions<T>): DecoratedFunc {
+      function ThrowsFatalExceptionBag<T extends Constructable>(options?: ThrowsOptions<T>): DecoratedFunc;
+      function ThrowsFatalExceptionBag(message?: string): DecoratedFunc;
+      function ThrowsFatalExceptionBag<T extends Constructable>(message?: string | ThrowsOptions<T>): DecoratedFunc {
         return createExceptionBagDecorator(FatalExceptionBag.from.bind(FatalExceptionBag))(message);
       }
 
       class BusinessLogicClass {
-        @ThrowsFatalErrorBag('failed doSomething')
+        @ThrowsFatalExceptionBag('failed doSomething')
         doSomething(@InBag('value') value: number) {
           if (value < 0) {
             throw new Error(`Invalid value of ${value}`);

@@ -14,7 +14,10 @@ class User {
 }
 
 class MyClass {
-  public constructor(private readonly client?: any, private readonly url?: string) {}
+  public constructor(
+    private readonly client?: unknown,
+    private readonly url?: string,
+  ) {}
 
   @ThrowsAxiosExceptionBag('failed fetching data')
   @Span()
@@ -31,31 +34,31 @@ class MyClass {
   }
 
   @ThrowsAxiosExceptionBag()
-  async getUser(@InBag('userId') userId: string, name: string, @InBag() age: number): Promise<User> {
+  async getUser(@InBag('userId') _userId: string, _name: string, @InBag() _age: number): Promise<User> {
     return new Promise((resolve, reject) => {
       setTimeout(() => reject(new Error('we have failed')), 100);
     });
   }
 
   @ThrowsAxiosExceptionBag('failed fetching user')
-  async getUserWithMessage(@InBag('userId') userId: string, name: string, @InBag() age: number): Promise<User> {
+  async getUserWithMessage(@InBag('userId') _userId: string, _name: string, @InBag() _age: number): Promise<User> {
     return new Promise((resolve, reject) => {
       setTimeout(() => reject(new Error('we have failed')), 100);
     });
   }
 
   @ThrowsAxiosExceptionBag()
-  getUserSync(@InBag('user') user: User): User {
+  getUserSync(@InBag('user') _user: User): User {
     throw new Error('we have failed sync');
   }
 
   @ThrowsAxiosExceptionBag()
-  getUserObservable(@InBag('userId') userId: string, name: string, @InBag() age: number): Observable<User> {
+  getUserObservable(@InBag('userId') _userId: string, _name: string, @InBag() _age: number): Observable<User> {
     return throwError(() => new Error('we have failed observing'));
   }
 
   @ThrowsAxiosExceptionBag()
-  getUserSyncNoItems(user: User): User {
+  getUserSyncNoItems(_user: User): User {
     throw new Error('we have failed sync');
   }
 
@@ -78,19 +81,20 @@ describe('ThrowsAxiosExceptionBag', () => {
   });
 
   it('should work with @Span decorators', async () => {
-    const data: any = await new MyClass(undefined, dummyServer.url).getDataSuccess();
+    const data = await new MyClass(undefined, dummyServer.url).getDataSuccess();
     expect(data).toEqual({ id: 1 });
   });
 
   it('should fail with axios error', async () => {
     /* eslint-disable jest/no-conditional-expect */
-    expect.assertions(3);
+    expect.assertions(4);
     try {
       await new MyClass().getData('unique');
     } catch (error) {
       expect(error).toBeInstanceOf(AxiosExceptionBag);
       const exception = error as AxiosExceptionBag;
-      expect(exception.message).toContain('failed fetching data: ECONNREFUSED');
+      expect(exception.message).toContain('failed fetching data:');
+      expect(exception.message).toContain('ECONNREFUSED');
       expect(exception.getBag()).toEqual({
         axios_baseUrl: 'http://localhost',
         axios_code: 'ECONNREFUSED',

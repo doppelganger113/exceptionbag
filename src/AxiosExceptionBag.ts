@@ -1,5 +1,5 @@
 import { ExceptionBag } from './ExceptionBag';
-import { AxiosError } from 'axios';
+import { AxiosError, AxiosResponseHeaders, RawAxiosResponseHeaders } from 'axios';
 
 export enum AxiosSource {
   Unknown = 'Unknown',
@@ -96,7 +96,9 @@ export class AxiosExceptionBag extends ExceptionBag {
     return this.responseData as T;
   }
 
-  private static toHeaders(axiosHeaders: Record<string, string>): Record<string, string> {
+  private static toHeaders(
+    axiosHeaders: RawAxiosResponseHeaders | AxiosResponseHeaders,
+  ): Record<string, string> {
     const keyValueHeaders: Record<string, string> = {};
 
     Object.keys(axiosHeaders).forEach((key) => {
@@ -122,8 +124,8 @@ export class AxiosExceptionBag extends ExceptionBag {
    * to {@link ExceptionBag}
    */
   public static fromAxiosError(description: string, error: AxiosError): AxiosExceptionBag {
-    const baseUrl: string = error.config.baseURL || '';
-    const timeout: number = error.config.timeout || 0;
+    const baseUrl: string = error.config?.baseURL || '';
+    const timeout: number = error.config?.timeout || 0;
     const code = error.code || '';
     const status = error.response?.status || 0;
     let statusText = '';
@@ -154,7 +156,7 @@ export class AxiosExceptionBag extends ExceptionBag {
 
       source = AxiosSource.Request;
       path = req.path || '';
-      method = (error.config as Record<string, string>).method || '';
+      method = error.config?.method || '';
     }
     method = method.toUpperCase();
 

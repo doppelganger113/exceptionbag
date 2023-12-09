@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { BagValue, ExceptionBag } from '../ExceptionBag';
 import { catchError, Observable, throwError } from 'rxjs';
-import { Constructable } from '../types';
+import { Constructable, DecoratedFunc } from '../types';
 
 /* eslint-disable @typescript-eslint/ban-types */
 
@@ -64,9 +64,7 @@ export interface ThrowsOptions<T extends Constructable> {
   message?: string;
 }
 
-type ExceptionBagCreatorFunc<T extends Constructable> = (
-  options?: string | ThrowsOptions<T>,
-) => any | Promise<any> | Observable<any>;
+type ExceptionBagCreatorFunc<T extends Constructable> = (options?: string | ThrowsOptions<T>) => DecoratedFunc;
 
 export const getMessage = <T extends Constructable>(options?: string | ThrowsOptions<T>): string => {
   if (typeof options === 'string') {
@@ -107,7 +105,7 @@ export function createExceptionBagDecorator<T extends Constructable>(
       const method = descriptor.value as Function;
       const msg = getMessage<T>(options) || `failed ${target?.constructor?.name} ${propertyName}`;
 
-      descriptor.value = function (...args: any[]) {
+      descriptor.value = function (...args: unknown[]) {
         const inBagParameters: ArgName[] | undefined = Reflect.getOwnMetadata(
           inBagMetadataKey,
           target,
