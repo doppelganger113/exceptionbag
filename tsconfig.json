@@ -10,15 +10,13 @@
     "allowSyntheticDefaultImports": true,
     "target": "es2017",
     "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
+    "outDir": "./",
+    "baseUrl": "./src",
     "incremental": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictBindCallApply": true
   },
-  "include": [
-    "src/index.ts",
-    "src/**/*"
-  ]
+  "include": ["src/"],
+  "exclude": ["!src/decorators"]
 }

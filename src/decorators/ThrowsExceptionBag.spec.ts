@@ -1,9 +1,8 @@
 import 'reflect-metadata';
 import { ThrowsExceptionBag } from './ThrowsExceptionBag';
 import { createExceptionBagDecorator, InBag, ThrowsOptions } from './decorators';
-import { ExceptionBag } from '../ExceptionBag';
+import { ExceptionBag, Constructable, DecoratedFunc } from './../index';
 import { from, lastValueFrom, Observable, throwError } from 'rxjs';
-import { Constructable, DecoratedFunc } from '../types';
 
 class FatalExceptionBag extends ExceptionBag {
   public constructor(msg: string, cause?: Error) {

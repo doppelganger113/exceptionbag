@@ -1,6 +1,6 @@
 import { createExceptionBagDecorator, ThrowsOptions } from './decorators';
-import { ExceptionBag } from '../ExceptionBag';
-import { Constructable, DecoratedFunc } from '../types';
+import { ExceptionBag } from './../index';
+import { Constructable, DecoratedFunc } from './../types';
 
 /**
  * @description Catches error and re-throws it as {@link ExceptionBag}.

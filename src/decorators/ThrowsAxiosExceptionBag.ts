@@ -1,6 +1,5 @@
 import { createExceptionBagDecorator, ThrowsOptions } from './decorators';
-import { AxiosExceptionBag } from '../AxiosExceptionBag';
-import { Constructable, DecoratedFunc } from '../types';
+import { Constructable, DecoratedFunc, AxiosExceptionBag } from './../index';
 
 /**
  * @description Catches error and re-throws it as {@link AxiosExceptionBag} if it's from axios or as {@link ExceptionBag}.

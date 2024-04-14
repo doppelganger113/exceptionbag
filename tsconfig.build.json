@@ -7,7 +7,6 @@
     "*.spec.ts"
   ],
   "include": [
-    "src/index.ts",
-    "src/decorators/index.ts"
-  ]
+    "src/"
+  ],
 }
