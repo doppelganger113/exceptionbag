@@ -126,7 +126,7 @@ try {
 For simple use cases, annotations can be used to decorate the method
 
 ```typescript
-import {ThrowsExceptionBag} from "exceptionbag";
+import {ThrowsExceptionBag} from "exceptionbag/decorators";
 
 class MyService {
 

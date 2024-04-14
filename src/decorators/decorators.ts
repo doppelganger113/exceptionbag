@@ -1,7 +1,6 @@
 import 'reflect-metadata';
-import { BagValue, ExceptionBag } from '../ExceptionBag';
 import { catchError, Observable, throwError } from 'rxjs';
-import { Constructable, DecoratedFunc } from '../types';
+import { Constructable, DecoratedFunc, BagValue, ExceptionBag } from './../index';
 
 /* eslint-disable @typescript-eslint/ban-types */
 

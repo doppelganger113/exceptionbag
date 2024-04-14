@@ -1,11 +1,10 @@
 import 'reflect-metadata';
 import { ThrowsAxiosExceptionBag } from './ThrowsAxiosExceptionBag';
-import { ExceptionBag } from '../ExceptionBag';
 import { Observable, throwError, lastValueFrom, tap } from 'rxjs';
 import { InBag } from './decorators';
-import { createDummyServer, DummyServer } from '../TestServer';
+import { createDummyServer, DummyServer } from './../TestServer';
 import axios, { AxiosResponse } from 'axios';
-import { AxiosExceptionBag } from '../AxiosExceptionBag';
+import { AxiosExceptionBag, ExceptionBag } from './../index';
 import { Span } from 'nestjs-otel';
 
 class User {
