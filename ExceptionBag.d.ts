@@ -80,6 +80,14 @@ export declare class ExceptionBag extends Error {
      * @description Check if ExceptionBag wraps specified error class.
      */
     isCauseInstanceOf<C extends Constructable>(clazz: C): boolean;
+    /**
+     * @description Should be used when you are unable to throw the {@link ExceptionBag} error, for example when
+     * using callbacks.
+     *
+     * @example
+     * cb(ExceptionBag.from('failed handling', error).captureStackTrace())
+     */
+    captureStackTrace(): ExceptionBag;
     protected setMessage(msg: string): void;
 }
 //# sourceMappingURL=ExceptionBag.d.ts.map

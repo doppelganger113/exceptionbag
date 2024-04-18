@@ -188,6 +188,19 @@ export class ExceptionBag extends Error {
     return this.cause instanceof clazz;
   }
 
+  /**
+   * @description Should be used when you are unable to throw the {@link ExceptionBag} error, for example when
+   * using callbacks.
+   *
+   * @example
+   * cb(ExceptionBag.from('failed handling', error).captureStackTrace())
+   */
+  public captureStackTrace(): ExceptionBag {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    Error.captureStackTrace(this, this && this.captureStackTrace);
+    return this;
+  }
+
   protected setMessage(msg: string): void {
     this.message = msg;
   }
