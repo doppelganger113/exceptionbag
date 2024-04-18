@@ -238,5 +238,15 @@ describe('ExceptionBag', () => {
             expect(exception.getBag()).toEqual({ name: 'John' });
         });
     });
+    describe('captureStackTrace', () => {
+        it('should be possible to record a stack trace without throwing the error', () => {
+            var _a, _b;
+            const exception = ExceptionBag_1.ExceptionBag
+                .from('custom error', new Error('failure x'))
+                .captureStackTrace();
+            expect((_a = exception.stack) === null || _a === void 0 ? void 0 : _a.includes('exceptionbag/src/ExceptionBag.spec.ts')).toBeTruthy();
+            expect((_b = exception.stack) === null || _b === void 0 ? void 0 : _b.includes('captureStackTrace')).toBeFalsy();
+        });
+    });
 });
 //# sourceMappingURL=ExceptionBag.spec.js.map

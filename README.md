@@ -27,10 +27,10 @@ in your app and the message will be vague. Solving it with `ExceptionBag` would 
 ```javascript
 oldLibrary.execute(id, (data, err) => {
   if(err) {
-    cb(undefined, 
-      ExceptionBag
-          .from('failed executing old library', err)
-          .with({id})
+    cb(ExceptionBag
+            .from('failed executing old library', err)
+            .with({id})
+            .captureStackTrace() // This method call is only required when the error is not thrown 
     );
     return;
   }
@@ -154,7 +154,7 @@ const doSomeBusinessLogic = async (userId, membership) => {
 It is also possible to ignore certain errors and propagate them further
 
 ```typescript
-import {ThrowsExceptionBag} from "exceptionbag";
+import {ThrowsExceptionBag} from "exceptionbag/decorators";
 
 class CustomError extends Error {
   public constructor(msg?: string) {
@@ -226,7 +226,7 @@ class ExceptionBagFilter implements ExceptionFilter {
       message: exception.message,
       name: exception.name,
       stack: exception.stack,
-      ...exception.getBag()
+      details: exception.getBag()
     });
 
     // You can check for specific error classes that extend the ExceptionBag if needed so
@@ -335,6 +335,22 @@ class MyApiHandler {
   async getData(@InBag('userId') userId): Promise<any> {
     // fetch data
   }
+}
+```
+
+So when you are handling the error it's much easier to debug or handle specific cases
+```typescript
+try {
+    const data = await new MyApiHandler().getData('1234');
+} catch (error) {
+    if(error instanceof AxiosExceptionBag) {
+        // has more type safe methods to easy handling
+        const response = error.getResponseData<any>();
+        const isBadRequest = error.hasStatus(400);
+        const headers = error.getHeaders();
+        // and the base getBag() with all key - value details
+        const bag = error.getBag();
+    }
 }
 ```
 

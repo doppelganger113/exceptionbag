@@ -280,4 +280,15 @@ describe('ExceptionBag', () => {
       expect(exception.getBag()).toEqual({ name: 'John' });
     });
   });
+
+  describe('captureStackTrace', () => {
+    it('should be possible to record a stack trace without throwing the error', () => {
+      const exception = ExceptionBag
+        .from('custom error', new Error('failure x'))
+        .captureStackTrace();
+
+      expect(exception.stack?.includes('exceptionbag/src/ExceptionBag.spec.ts')).toBeTruthy();
+      expect(exception.stack?.includes('captureStackTrace')).toBeFalsy();
+    })
+  })
 });
